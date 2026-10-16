@@ -6,6 +6,11 @@ import ServiceManagement
 
 enum ResultKind { case success, failure, info }
 
+struct AppUpdate: Equatable {
+    let version: String
+    let url: URL
+}
+
 struct ResultInfo: Identifiable {
     let id = UUID()
     let kind: ResultKind
@@ -18,6 +23,7 @@ struct ResultInfo: Identifiable {
 final class Model: ObservableObject {
     // Backup
     @Published var status = TMStatus()
+    @Published var loaded = false          // primeira leitura do status já feita
     @Published var backups: [String] = UserDefaults.standard.stringArray(forKey: "backups") ?? []
     @Published var serverLive = false
     @Published var needsFDA = false
@@ -34,6 +40,10 @@ final class Model: ObservableObject {
     @Published var turbo = false
     @Published var source = PowerSource()
     @Published var phaseStart = Date()
+    @Published var netUp: Double?
+    @Published var stuck = false
+    @Published var destFree: Int64? = (UserDefaults.standard.object(forKey: "destFree") as? NSNumber)?.int64Value
+    @Published var update: AppUpdate?
     @Published var sleepCountdown: Int?
     @Published var sleepWhenDone: Bool = UserDefaults.standard.bool(forKey: "sleepWhenDone") {
         didSet { guard sleepWhenDone != oldValue else { return }; UserDefaults.standard.set(sleepWhenDone, forKey: "sleepWhenDone") }
@@ -75,6 +85,12 @@ final class Model: ObservableObject {
     private var assertion: IOPMAssertionID = 0
     private var awake = false
     private var phaseKey = ""
+    private var lastNetBytes: UInt64?
+    private var lastNetTime: Date?
+    private var lastNetActive = Date()
+    private var lastDestCheck = Date.distantPast
+    private var runStart: Date?
+    private var readingBackups = false
 
     init() {
         // Cada leitura roda em paralelo: um comando lento não atrasa o resto
@@ -86,6 +102,7 @@ final class Model: ObservableObject {
         }
         Task { destKind = await Task.detached { readDestinationKind() }.value }
         Task { scanWA(); scanCaches() }
+        Task { await checkForUpdate() }
     }
 
     // MARK: Derivados
@@ -139,7 +156,12 @@ final class Model: ObservableObject {
         if s.running && s.phase != phaseKey {
             phaseKey = s.phase
             phaseStart = Date()
+            lastNetActive = Date()
         }
+
+        // Mostra o status na hora (o fim de backup é tratado mais abaixo, em finish())
+        if !(wasRunning && !s.running) { set(\.status, s) }
+        set(\.loaded, true)
 
         if s.running {
             if !wasRunning {
@@ -147,10 +169,14 @@ final class Model: ObservableObject {
                 keepAwake(true)
                 if result != nil { result = nil }
             }
-            if before?.isEmpty ?? true {
-                let r = await Task.detached { readBackups() }.value
-                set(\.needsFDA, r.noAccess); set(\.backupsError, r.error)
-                if !r.list.isEmpty { before = r.list; save(r.list) }
+            if (before?.isEmpty ?? true) && !readingBackups {
+                readingBackups = true
+                Task {
+                    let r = await Task.detached { readBackups() }.value
+                    set(\.needsFDA, r.noAccess); set(\.backupsError, r.error)
+                    if !r.list.isEmpty && (before?.isEmpty ?? true) { before = r.list; save(r.list) }
+                    readingBackups = false
+                }
             }
             let new_net = await Task.detached { readNetwork() }.value
             set(\.net, new_net)
@@ -158,6 +184,17 @@ final class Model: ObservableObject {
                 let k = await Task.detached { readDestinationKind() }.value
                 set(\.destKind, k)
             }
+            measureNetwork()
+            if let mp = s.mountPoint, Date().timeIntervalSince(lastDestCheck) > 60 {
+                lastDestCheck = Date()
+                if let f = await Task.detached(operation: { destinationFree(mp) }).value {
+                    set(\.destFree, f)
+                    UserDefaults.standard.set(NSNumber(value: f), forKey: "destFree")
+                }
+            }
+            // "possivelmente travado": fase longa (45 min) sem envio pela rede há 10 min
+            set(\.stuck, destKind == "Network" && Date().timeIntervalSince(phaseStart) > 45 * 60
+                         && Date().timeIntervalSince(lastNetActive) > 10 * 60)
         } else if wasRunning {
             set(\.status, s)
             keepAwake(false)
@@ -166,7 +203,10 @@ final class Model: ObservableObject {
 
         wasRunning = s.running
         set(\.status, s)
-        if !s.running { set(\.speed, nil); lastBytes = nil; lastTime = nil }
+        if !s.running {
+            set(\.speed, nil); lastBytes = nil; lastTime = nil
+            set(\.netUp, nil); set(\.stuck, false); lastNetBytes = nil; lastNetTime = nil
+        }
         let new_snapshots = await Task.detached { listLocalSnapshots() }.value
         set(\.snapshots, new_snapshots)
         set(\.free, freeBytes())
@@ -220,7 +260,7 @@ final class Model: ObservableObject {
     // MARK: Backup
 
     func startBackup() {
-        working = true; result = nil; userStopped = false
+        working = true; result = nil; userStopped = false; runStart = Date()
         Task {
             let r0 = await Task.detached { readBackups() }.value
             needsFDA = r0.noAccess
@@ -255,10 +295,13 @@ final class Model: ObservableObject {
         let new = after.filter { !prev.contains($0) && $0 >= day }
         if !after.isEmpty { save(after) }
 
+        let duration = runStart.map { Date().timeIntervalSince($0) }
+        runStart = nil
         if let latest = new.last {
-            result = ResultInfo(kind: .success, title: L("resultOK"),
-                                detail: Lf("resultOKDetail", pretty(latest), gb(lastSent), after.count))
-            addHistory(.backupOK(stamp: latest, sent: lastSent, count: after.count),
+            var detail = Lf("resultOKDetail", pretty(latest), gb(lastSent), after.count)
+            if let duration { detail += " · " + Lf("resultDuration", durationText(duration)) }
+            result = ResultInfo(kind: .success, title: L("resultOK"), detail: detail)
+            addHistory(.backupOK(stamp: latest, sent: lastSent, count: after.count, duration: duration),
                        log: "OK: backup \(latest), \(gb(lastSent)) sent, \(after.count) backups at destination")
             notify("Force TM ✅", Lf("notifOK", pretty(latest)), sound: "Glass")
         } else if userStopped {
@@ -277,6 +320,51 @@ final class Model: ObservableObject {
         let stoppedByUser = userStopped
         before = nil; startDate = nil; lastSent = nil; userStopped = false; phaseKey = ""
         if sleepWhenDone && !stoppedByUser { startSleepCountdown() }
+    }
+
+    // MARK: Rede, diagnóstico, atualização
+
+    /// Taxa de envio da interface de rede (mostra atividade mesmo nas fases sem porcentagem)
+    private func measureNetwork() {
+        guard destKind == "Network", let iface = net.iface, let ob = interfaceOutBytes(iface) else { return }
+        let now = Date()
+        if let lb = lastNetBytes, let lt = lastNetTime, now > lt {
+            let delta = ob >= lb ? ob - lb : ob + (1 << 32) - lb      // contador de 32 bits virou
+            let rate = Double(delta) / now.timeIntervalSince(lt)
+            set(\.netUp, netUp.map { $0 * 0.7 + rate * 0.3 } ?? rate)
+            if rate > 200_000 { lastNetActive = now }
+        }
+        lastNetBytes = ob; lastNetTime = now
+    }
+
+    func copyDiagnostics() {
+        result = ResultInfo(kind: .info, title: L("diagCollecting"), detail: L("diagCollectingDetail"))
+        let list = backups, noAccess = needsFDA
+        Task {
+            let text = await Task.detached { collectDiagnostics(appVersion: appVersion, backups: list, noAccess: noAccess) }.value
+            copyToClipboard(text)
+            result = ResultInfo(kind: .success, title: L("diagCopied"), detail: L("diagCopiedDetail"))
+        }
+    }
+
+    func checkForUpdate() async {
+        var req = URLRequest(url: URL(string: "https://api.github.com/repos/lordironballs/force-tm/releases/latest")!)
+        req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        req.timeoutInterval = 15
+        guard let res = try? await URLSession.shared.data(for: req),
+              (res.1 as? HTTPURLResponse)?.statusCode == 200,
+              let obj = try? JSONSerialization.jsonObject(with: res.0) as? [String: Any],
+              let tag = obj["tag_name"] as? String,
+              let html = obj["html_url"] as? String, let url = URL(string: html) else { return }
+        let latest = tag.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
+        if isNewer(latest, than: appVersion), UserDefaults.standard.string(forKey: "skipVersion") != latest {
+            update = AppUpdate(version: latest, url: url)
+        }
+    }
+
+    func skipUpdate() {
+        if let v = update?.version { UserDefaults.standard.set(v, forKey: "skipVersion") }
+        update = nil
     }
 
     // MARK: Dormir ao terminar

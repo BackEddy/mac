@@ -56,6 +56,7 @@ struct ContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
+            if let u = m.update { updateBanner(u) }
             if let w = m.staleWarning { banner(w) }
             if let r = m.result { resultCard(r) }
             if let c = m.sleepCountdown { sleepBanner(c) }
@@ -121,8 +122,8 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Force TM").font(.title2.weight(.semibold))
                 HStack(spacing: 6) {
-                    if m.status.running { ProgressView().controlSize(.mini) }
-                    Text(m.status.running ? phaseName(m.status.phase) : L("idle"))
+                    if m.status.running || !m.loaded { ProgressView().controlSize(.mini) }
+                    Text(!m.loaded ? L("checking") : m.status.running ? phaseName(m.status.phase) : L("idle"))
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
@@ -133,9 +134,22 @@ struct ContentView: View {
                 Button(L("stop"), role: .destructive) { sheet = .stop }
             } else {
                 Button { m.startBackup() } label: { Label(L("backupNow"), systemImage: "arrow.up.circle.fill") }
-                    .buttonStyle(.borderedProminent).controlSize(.large).disabled(m.working)
+                    .buttonStyle(.borderedProminent).controlSize(.large).disabled(m.working || !m.loaded)
             }
         }
+    }
+
+    func updateBanner(_ u: AppUpdate) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.down.circle.fill").foregroundStyle(Color.blue)
+            Text(Lf("updateAvailable", u.version)).font(.callout.weight(.semibold))
+            Spacer()
+            Button(L("download")) { NSWorkspace.shared.open(u.url) }
+            Button(L("skip")) { m.skipUpdate() }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.blue.opacity(0.15)))
     }
 
     func sleepBanner(_ c: Int) -> some View {
@@ -170,13 +184,14 @@ struct ContentView: View {
             Button { openWindow(id: "support") } label: { Label(L("supportBtn"), systemImage: "heart.fill") }
                 .buttonStyle(.borderless).foregroundStyle(Color.pink)
                 .padding(.trailing, 8)
+            Image(systemName: "globe").foregroundStyle(.secondary).help(L("language"))
             Picker(L("language"), selection: $m.lang) {
                 Text(L("langAuto")).tag("auto")
                 Text("Português").tag("pt")
                 Text("English").tag("en")
                 Text("Español").tag("es")
             }
-            .pickerStyle(.menu).frame(width: 160)
+            .pickerStyle(.menu).labelsHidden().fixedSize()
         }
         .font(.caption)
     }
@@ -193,6 +208,9 @@ struct ContentView: View {
                     Button { m.result = nil } label: { Image(systemName: "xmark") }.buttonStyle(.borderless)
                 }
                 if !r.detail.isEmpty { Text(r.detail).font(.callout).fixedSize(horizontal: false, vertical: true) }
+                if r.kind == .failure {
+                    Button(L("copyDiag")) { m.copyDiagnostics() }
+                }
                 if !r.errors.isEmpty {
                     ScrollView {
                         Text(r.errors.joined(separator: "\n"))
@@ -253,17 +271,30 @@ struct ContentView: View {
                     if m.destKind == "Network", let wifi = m.net.wifi {
                         HStack(spacing: 6) {
                             Image(systemName: wifi ? "wifi" : "cable.connector").foregroundStyle(.secondary)
-                            Text("\(L("network")): \(wifi ? L("netWifi") : L("netCable"))\(m.net.iface.map { " (\($0))" } ?? "")")
-                                .font(.caption).foregroundStyle(.secondary)
+                            Text("\(L("network")): \(wifi ? L("netWifi") : L("netCable"))\(m.net.iface.map { " (\($0))" } ?? "")\(m.netUp.map { " · ↑ " + mbps($0) } ?? "")")
+                                .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                                .help(L("netUpHelp"))
                         }
                         if m.showNetHint { Text(L("netHint")).font(.caption).foregroundStyle(Color.orange) }
+                    }
+                    if m.stuck {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label(L("stuckMsg"), systemImage: "exclamationmark.triangle.fill")
+                                .font(.callout).foregroundStyle(Color.orange).fixedSize(horizontal: false, vertical: true)
+                            Button(L("copyDiag")) { m.copyDiagnostics() }
+                        }
                     }
 
                 }
             } else {
                 HStack(spacing: 10) {
-                    Image(systemName: "arrow.up.circle").foregroundStyle(.secondary)
-                    Text(L("idleHint")).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    if m.loaded {
+                        Image(systemName: "arrow.up.circle").foregroundStyle(.secondary)
+                        Text(L("idleHint")).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        ProgressView().controlSize(.small)
+                        Text(L("checking")).font(.callout).foregroundStyle(.secondary)
+                    }
                 }
             }
         }
@@ -283,6 +314,7 @@ struct ContentView: View {
                     Text(Lf("lastBackup", pretty(last))).font(.callout)
                     Text(agoText(d)).font(.callout.weight(.semibold))
                         .foregroundStyle(d <= 1 ? Color.green : d <= 6 ? Color.orange : Color.red)
+                    if let f = m.destFree { Text(Lf("destFree", gb(f))).font(.callout) }
                     if !m.serverLive { Text(L("lastKnown")).font(.caption).foregroundStyle(.secondary) }
                 } else {
                     Text(L("noData")).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -473,8 +505,9 @@ struct ContentView: View {
 
     func historyDisplay(_ k: HistoryKind) -> (icon: String, color: Color, text: String) {
         switch k {
-        case .backupOK(let stamp, let sent, _):
-            return ("checkmark.seal.fill", .green, Lf("hBackupOK", gb(sent)) + " · " + pretty(stamp))
+        case .backupOK(let stamp, let sent, _, let duration):
+            return ("checkmark.seal.fill", .green,
+                    Lf("hBackupOK", gb(sent)) + (duration.map { " · " + durationText($0) } ?? "") + " · " + pretty(stamp))
         case .backupFail:
             return ("xmark.octagon.fill", .red, L("hBackupFail"))
         case .stopped:
@@ -601,7 +634,7 @@ struct MenuBarView: View {
             }
             Divider()
             if !m.status.running {
-                Button { m.startBackup() } label: { Label(L("backupNow"), systemImage: "arrow.up.circle") }.disabled(m.working)
+                Button { m.startBackup() } label: { Label(L("backupNow"), systemImage: "arrow.up.circle") }.disabled(m.working || !m.loaded)
             } else {
                 Button { m.displaySleepNow() } label: { Label(L("screenOff"), systemImage: "display") }
             }

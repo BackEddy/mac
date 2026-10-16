@@ -56,6 +56,7 @@ struct TMStatus: Sendable, Equatable {
     var bytes: Double?
     var totalBytes: Double?
     var timeRemaining: Double?
+    var mountPoint: String?
 }
 
 func readStatus() -> TMStatus {
@@ -66,6 +67,7 @@ func readStatus() -> TMStatus {
     var s = TMStatus()
     s.running = (num(d["Running"]) ?? 0) == 1
     s.phase = d["BackupPhase"] as? String ?? ""
+    s.mountPoint = d["DestinationMountPoint"] as? String
     let prog = d["Progress"] as? [String: Any] ?? [:]
     if let raw = num(prog["Percent"]) ?? num(d["Percent"]), raw >= 0 {
         var f = num(d["FractionOfProgressBar"]) ?? 1
@@ -91,7 +93,7 @@ func readBackups() -> BackupsRead {
     if r.list.isEmpty {
         r.error = out.split(separator: "\n").first.map(String.init) ?? ""
         let l = out.lowercased()
-        r.noAccess = l.contains("full disk access") || l.contains("acesso total") || l.contains("operation not permitted")
+        r.noAccess = l.contains("full disk access") || l.contains("acesso total")
     }
     return r
 }
@@ -108,10 +110,10 @@ func freeBytes() -> Int64 {
     return v?.volumeAvailableCapacityForImportantUsage ?? 0
 }
 
-func recentErrors(since: Date) -> [String] {
+func recentErrors(since: Date, timeout: Double = 30) -> [String] {
     let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd HH:mm:ss"; f.locale = Locale(identifier: "en_US_POSIX")
     let out = sh("/usr/bin/log", ["show", "--predicate", "subsystem == \"com.apple.TimeMachine\"",
-                                  "--start", f.string(from: since), "--style", "compact"]).out
+                                  "--start", f.string(from: since), "--style", "compact"], timeout: timeout).out
     let keys = ["error", "fail", "cancel", "unable"]
     let lines = out.split(separator: "\n").map(String.init).filter { l in keys.contains { l.lowercased().contains($0) } }
     return Array(lines.suffix(8))
@@ -139,30 +141,6 @@ let turboOffCommand = "/usr/sbin/sysctl debug.lowpri_throttle_enabled=1"
 
 // MARK: - Energia
 
-struct PowerInfo: Sendable, Equatable {
-    var acSleep: Int?
-    var womp: Int?
-    var sleepIssue: Bool { (acSleep ?? 0) != 0 }
-    var wompIssue: Bool { womp == 0 }
-    var ok: Bool { !sleepIssue && !wompIssue }
-}
-
-func readPower() -> PowerInfo {
-    let out = sh("/usr/bin/pmset", ["-g", "custom"]).out
-    var p = PowerInfo()
-    var inAC = false
-    for raw in out.split(separator: "\n") {
-        let line = raw.trimmingCharacters(in: .whitespaces)
-        if line.hasSuffix(":") { inAC = line.hasPrefix("AC Power"); continue }
-        guard inAC else { continue }
-        let f = line.split(whereSeparator: { $0 == " " || $0 == "\t" })
-        guard f.count >= 2, let v = Int(f[1]) else { continue }
-        if f[0] == "sleep" { p.acSleep = v }
-        if f[0] == "womp" { p.womp = v }
-    }
-    return p
-}
-let powerFixCommand = "/usr/bin/pmset -c sleep 0 womp 1"
 
 struct PowerSource: Sendable, Equatable {
     var onAC = true
@@ -205,6 +183,71 @@ func readNetwork() -> NetInfo {
     }
     return NetInfo(iface: iface, wifi: wifi)
 }
+
+/// Bytes enviados pela interface (contador de 32 bits do sistema; o chamador trata a virada)
+func interfaceOutBytes(_ name: String) -> UInt64? {
+    var ifap: UnsafeMutablePointer<ifaddrs>?
+    guard getifaddrs(&ifap) == 0, let first = ifap else { return nil }
+    defer { freeifaddrs(ifap) }
+    var p: UnsafeMutablePointer<ifaddrs>? = first
+    while let cur = p {
+        let ifa = cur.pointee
+        if let addr = ifa.ifa_addr, addr.pointee.sa_family == UInt8(AF_LINK),
+           String(cString: ifa.ifa_name) == name, let data = ifa.ifa_data {
+            return UInt64(data.assumingMemoryBound(to: if_data.self).pointee.ifi_obytes)
+        }
+        p = ifa.ifa_next
+    }
+    return nil
+}
+
+/// Espaço livre no destino montado (em bytes), via df
+func destinationFree(_ mountPoint: String) -> Int64? {
+    let out = sh("/bin/df", ["-k", mountPoint], timeout: 10).out
+    let lines = out.split(separator: "\n")
+    guard lines.count >= 2 else { return nil }
+    let f = lines[1].split(whereSeparator: { $0 == " " || $0 == "\t" })
+    guard f.count >= 4, let kb = Int64(f[3]) else { return nil }
+    return kb * 1024
+}
+
+/// Texto de diagnóstico para suporte / issues no GitHub (sem senhas; usuário do destino mascarado)
+func collectDiagnostics(appVersion: String, backups: [String], noAccess: Bool) -> String {
+    func section(_ title: String, _ body: String) -> String {
+        "### \(title)\n```\n\(body.trimmingCharacters(in: .whitespacesAndNewlines))\n```\n"
+    }
+    let model = sh("/usr/sbin/sysctl", ["-n", "hw.model"], timeout: 5).out
+    var dest = sh("/usr/bin/tmutil", ["destinationinfo"], timeout: 15).out
+    if let re = try? NSRegularExpression(pattern: "//[^@/\\s]+@") {
+        dest = re.stringByReplacingMatches(in: dest, range: NSRange(dest.startIndex..., in: dest), withTemplate: "//***@")
+    }
+    let snaps = listLocalSnapshots()
+    let errs = recentErrors(since: Date().addingTimeInterval(-1800), timeout: 15)
+    var s = "## Force TM diagnostics\n\n"
+    s += "- Force TM: \(appVersion)\n"
+    s += "- macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)\n"
+    s += "- Model: \(model.trimmingCharacters(in: .whitespacesAndNewlines))\n"
+    s += "- Destination backups: \(backups.count) (latest: \(backups.last ?? "unknown"))\(noAccess ? " — no Full Disk Access" : "")\n"
+    s += "- Local snapshots: \(snaps.count)\n"
+    s += "- Free on this Mac: \(gb(freeBytes()))\n"
+    s += "- Turbo: \(turboIsOn() ? "on" : "off")\n\n"
+    s += section("tmutil status", sh("/usr/bin/tmutil", ["status"], timeout: 15).out)
+    s += section("tmutil destinationinfo", dest)
+    s += section("pmset -g batt", sh("/usr/bin/pmset", ["-g", "batt"], timeout: 5).out)
+    s += section("Time Machine errors (last 30 min)", errs.isEmpty ? "(none)" : errs.joined(separator: "\n"))
+    return s
+}
+
+func isNewer(_ a: String, than b: String) -> Bool {
+    let x = a.split(separator: ".").map { Int($0) ?? 0 }, y = b.split(separator: ".").map { Int($0) ?? 0 }
+    for i in 0..<max(x.count, y.count) {
+        let l = i < x.count ? x[i] : 0, r = i < y.count ? y[i] : 0
+        if l != r { return l > r }
+    }
+    return false
+}
+
+let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
 
 // MARK: - Varredura de arquivos
 
@@ -347,7 +390,7 @@ func deleteCaches(_ items: [CacheItem]) -> Int64 {
 // MARK: - Histórico
 
 enum HistoryKind: Codable {
-    case backupOK(stamp: String, sent: Double?, count: Int)
+    case backupOK(stamp: String, sent: Double?, count: Int, duration: Double? = nil)
     case backupFail(lastGood: String?)
     case stopped
     case startFail
@@ -431,6 +474,11 @@ func pct(_ p: Double?) -> String {
     guard let p else { return "—" }
     return String(format: "%.1f%%", locale: appLocale(), p * 100)
 }
+func durationText(_ s: Double) -> String {
+    let t = Int(s), h = t / 3600, m = (t % 3600) / 60
+    return h > 0 ? "\(h)h\(String(format: "%02d", m))" : m > 0 ? "\(m) min" : "< 1 min"
+}
+
 func elapsedText(since d: Date) -> String {
     let t = Int(Date().timeIntervalSince(d)), h = t / 3600, m = (t % 3600) / 60
     return h > 0 ? "\(h)h\(String(format: "%02d", m))" : m > 0 ? "\(m) min" : "< 1 min"

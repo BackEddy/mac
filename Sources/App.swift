@@ -25,6 +25,7 @@ func showAbout() {
 }
 
 struct AppCommands: Commands {
+    let model: Model
     @Environment(\.openWindow) private var openWindow
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
@@ -32,6 +33,7 @@ struct AppCommands: Commands {
         }
         CommandGroup(replacing: .help) {
             Button(L("helpMenu")) { openWindow(id: "help") }.keyboardShortcut("?", modifiers: .command)
+            Button(L("copyDiag")) { model.copyDiagnostics() }
             Divider()
             Button(L("supportBtn")) { openWindow(id: "support") }
             Button("GitHub") { NSWorkspace.shared.open(repoURL) }
@@ -50,7 +52,7 @@ struct ForceTMApp: App {
             ContentView().environmentObject(model)
         }
         .windowResizability(.contentSize)
-        .commands { AppCommands() }
+        .commands { AppCommands(model: model) }
 
         Window("Force TM — \(L("helpTitle"))", id: "help") {
             HelpView().environmentObject(model)
