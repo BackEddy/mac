@@ -35,7 +35,7 @@ func md(_ s: String) -> Text { Text(LocalizedStringKey(s)) }
 }
 
 enum ActiveSheet: String, Identifiable {
-    case consent, snapshots, whatsapp, caches, stop
+    case consent, snapshots, whatsapp, caches, stop, battery
     var id: String { rawValue }
 }
 
@@ -76,7 +76,8 @@ struct ContentView: View {
         .padding(20)
         .frame(width: 600)
         .id(m.lang)
-        .onAppear { if !m.consent { sheet = .consent } }
+        .onAppear { if !m.consent { sheet = .consent }; if tab == .cleanup { m.cleanupTabOpened() } }
+        .onChange(of: tab) { _, t in if t == .cleanup { m.cleanupTabOpened() } }
         .overlay { if let s = sheet { modalOverlay(s) } }
     }
 
@@ -93,12 +94,26 @@ struct ContentView: View {
                 case .whatsapp: whatsappSheet
                 case .caches: cachesSheet
                 case .stop: stopSheet
+                case .battery: batterySheet
                 }
             }
             .background(RoundedRectangle(cornerRadius: 14).fill(Color(nsColor: .windowBackgroundColor)))
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.12)))
             .shadow(color: .black.opacity(0.35), radius: 24, y: 8)
         }
+    }
+
+    var batterySheet: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(L("batteryAskTitle"), systemImage: "battery.25percent").font(.headline).foregroundStyle(Color.orange)
+            Text(Lf("batteryAskMsg", "\(m.source.batteryPercent ?? 0)%")).font(.callout).fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Spacer()
+                Button(L("cancel")) { sheet = nil }.keyboardShortcut(.cancelAction)
+                Button(L("startAnyway")) { sheet = nil; m.startBackup() }.buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(20).frame(width: 420)
     }
 
     var stopSheet: some View {
@@ -120,7 +135,10 @@ struct ContentView: View {
         HStack(spacing: 12) {
             appIcon(44)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Force TM").font(.title2.weight(.semibold))
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("Force TM").font(.title2.weight(.semibold))
+                    Text("v\(appVersion)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
                 HStack(spacing: 6) {
                     if m.status.running || !m.loaded { ProgressView().controlSize(.mini) }
                     Text(!m.loaded ? L("checking") : m.status.running ? phaseName(m.status.phase) : L("idle"))
@@ -133,8 +151,10 @@ struct ContentView: View {
             if m.status.running {
                 Button(L("stop"), role: .destructive) { sheet = .stop }
             } else {
-                Button { m.startBackup() } label: { Label(L("backupNow"), systemImage: "arrow.up.circle.fill") }
-                    .buttonStyle(.borderedProminent).controlSize(.large).disabled(m.working || !m.loaded)
+                Button { if m.lowBatteryBeforeStart { sheet = .battery } else { m.startBackup() } } label: {
+                    Label(L("backupNow"), systemImage: "arrow.up.circle.fill")
+                }
+                .buttonStyle(.borderedProminent).controlSize(.large).disabled(m.working || !m.loaded)
             }
         }
     }
@@ -307,7 +327,7 @@ struct ContentView: View {
                 if m.needsFDA {
                     md(L("fdaNeeded")).font(.callout).fixedSize(horizontal: false, vertical: true)
                     Button(L("openSettings")) { m.openFDASettings() }
-                    Text(L("fdaHint")).font(.caption).foregroundStyle(.secondary)
+                    Text(L("fdaHint")).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 } else if let last = m.backups.last {
                     let d = daysAgo(last) ?? 99
                     Text(Lf("nBackups", m.backups.count)).font(.callout)
@@ -661,7 +681,7 @@ struct HelpView: View {
                 HStack(spacing: 12) {
                     appIcon(48)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Force TM — \(L("helpTitle"))").font(.title2.weight(.semibold))
+                        Text("Force TM \(appVersion) — \(L("helpTitle"))").font(.title2.weight(.semibold))
                         HStack(spacing: 4) {
                             Text(L("createdBy"))
                             Link("eddyantonini.com.br", destination: URL(string: "https://eddyantonini.com.br")!)

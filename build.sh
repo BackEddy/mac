@@ -20,6 +20,8 @@ done
 iconutil -c icns build/AppIcon.iconset -o "$APP/Contents/Resources/AppIcon.icns"
 sips -z 256 256 build/icon_1024.png --out docs/icon.png >/dev/null   # ícone usado no README
 
+[ -f assets/avatar.jpg ] && cp assets/avatar.jpg "$APP/Contents/Resources/avatar.jpg"
+
 echo "Compilando $NAME $VERSION ($BUILD_NUMBER)..."
 swiftc -O -parse-as-library Sources/*.swift -o "$APP/Contents/MacOS/$NAME" \
   -framework SwiftUI -framework AppKit -framework IOKit -framework ServiceManagement

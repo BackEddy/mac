@@ -20,6 +20,9 @@ func qrImage(_ text: String, scale: CGFloat = 8) -> NSImage? {
     return img
 }
 
+/// Foto do autor embutida no app (assets/avatar.jpg, copiada pelo build.sh), se existir
+let authorPhoto: NSImage? = Bundle.main.url(forResource: "avatar", withExtension: "jpg").flatMap { NSImage(contentsOf: $0) }
+
 func copyToClipboard(_ s: String) {
     NSPasteboard.general.clearContents()
     NSPasteboard.general.setString(s, forType: .string)
@@ -32,9 +35,16 @@ struct SupportView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 12) {
-                appIcon(48)
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 16) {
+                if let authorPhoto {
+                    Image(nsImage: authorPhoto).resizable().scaledToFill()
+                        .frame(width: 88, height: 88).clipShape(Circle())
+                        .overlay(Circle().stroke(Color.primary.opacity(0.15), lineWidth: 1))
+                        .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
+                } else {
+                    appIcon(64)
+                }
+                VStack(alignment: .leading, spacing: 4) {
                     Text(L("supportTitle")).font(.title2.weight(.semibold))
                     Text(L("supportSubtitle")).font(.callout).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -76,7 +86,7 @@ struct SupportView: View {
                 }
             }
 
-            Text(L("supportThanks")).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Text(L("supportThanks")).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(22)
         .frame(width: 520)

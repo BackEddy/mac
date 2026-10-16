@@ -60,6 +60,7 @@ final class Model: ObservableObject {
     @Published var cacheSel: Set<String> = []
     @Published var cacheScanning = false
     @Published var cacheWorking = false
+    private var cleanupScanned = false
 
     // Histórico e ajustes
     @Published var history: [HistoryEntry] = loadHistory()
@@ -95,13 +96,12 @@ final class Model: ObservableObject {
     init() {
         // Cada leitura roda em paralelo: um comando lento não atrasa o resto
         Task { await loop() }
+        needsFDA = !hasFullDiskAccess()
         Task {
             let r = await Task.detached { readBackups() }.value
-            needsFDA = r.noAccess
             if !r.list.isEmpty { save(r.list) }
         }
         Task { destKind = await Task.detached { readDestinationKind() }.value }
-        Task { scanWA(); scanCaches() }
         Task { await checkForUpdate() }
     }
 
@@ -134,7 +134,7 @@ final class Model: ObservableObject {
     private func loop() async {
         while true {
             await tick()
-            try? await Task.sleep(for: .seconds(status.running ? 3 : 15))
+            try? await Task.sleep(for: .seconds(status.running || needsFDA ? 3 : 15))
         }
     }
 
@@ -173,7 +173,7 @@ final class Model: ObservableObject {
                 readingBackups = true
                 Task {
                     let r = await Task.detached { readBackups() }.value
-                    set(\.needsFDA, r.noAccess); set(\.backupsError, r.error)
+                    set(\.backupsError, r.error)
                     if !r.list.isEmpty && (before?.isEmpty ?? true) { before = r.list; save(r.list) }
                     readingBackups = false
                 }
@@ -214,6 +214,14 @@ final class Model: ObservableObject {
         set(\.turbo, new_turbo)
         let new_source = await Task.detached { readPowerSource() }.value
         set(\.source, new_source)
+        // Acesso Total ao Disco: quando o usuário liga em Ajustes, o aviso some sozinho
+        let fda = hasFullDiskAccess()
+        if fda && needsFDA {
+            needsFDA = false
+            let r = await Task.detached { readBackups() }.value
+            if !r.list.isEmpty { save(r.list) }
+            scanWA()
+        } else if !fda { set(\.needsFDA, true) }
         checkReminder()
     }
 
@@ -263,7 +271,6 @@ final class Model: ObservableObject {
         working = true; result = nil; userStopped = false; runStart = Date()
         Task {
             let r0 = await Task.detached { readBackups() }.value
-            needsFDA = r0.noAccess
             if !r0.list.isEmpty { before = r0.list; save(r0.list) } else { before = nil }
             startDate = Date().addingTimeInterval(-30)
             let r = await Task.detached { sh("/usr/bin/tmutil", ["startbackup"]) }.value
@@ -413,6 +420,15 @@ final class Model: ObservableObject {
     }
 
     // MARK: WhatsApp
+
+    /// Chamado ao abrir a aba Limpeza pela primeira vez
+    func cleanupTabOpened() {
+        guard !cleanupScanned else { return }
+        cleanupScanned = true
+        scanWA(); scanCaches()
+    }
+
+    var lowBatteryBeforeStart: Bool { !source.onAC && (source.batteryPercent ?? 100) < 50 }
 
     func scanWA() {
         waScanning = true

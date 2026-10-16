@@ -98,6 +98,14 @@ func readBackups() -> BackupsRead {
     return r
 }
 
+/// Acesso Total ao Disco: o banco de permissões do sistema só pode ser aberto com essa permissão
+func hasFullDiskAccess() -> Bool {
+    let path = "/Library/Application Support/com.apple.TCC/TCC.db"
+    guard let h = FileHandle(forReadingAtPath: path) else { return false }
+    try? h.close()
+    return true
+}
+
 func listLocalSnapshots() -> [String] {
     let out = sh("/usr/bin/tmutil", ["listlocalsnapshotdates", "/"]).out
     return matches(out, "^(\\d{4}-\\d{2}-\\d{2}-\\d{6})").sorted()
