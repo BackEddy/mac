@@ -1,4 +1,4 @@
-// Force TM — estado e ações
+// Backeddy — estado e ações
 import SwiftUI
 import AppKit
 import IOKit.pwr_mgt
@@ -324,7 +324,7 @@ final class Model: ObservableObject {
             result = ResultInfo(kind: .success, title: L("resultOK"), detail: detail)
             addHistory(.backupOK(stamp: latest, sent: lastSent, count: after.count, duration: duration),
                        log: "OK: backup \(latest), \(gb(lastSent)) sent, \(after.count) backups at destination")
-            notify("Force TM ✅", Lf("notifOK", pretty(latest)), sound: "Glass")
+            notify("Backeddy ✅", Lf("notifOK", pretty(latest)), sound: "Glass")
         } else if userStopped {
             result = ResultInfo(kind: .info, title: L("stoppedTitle"), detail: L("stoppedDetail"))
             addHistory(.stopped, log: "STOPPED: backup stopped by user")
@@ -336,7 +336,7 @@ final class Model: ObservableObject {
             if let last { detail += " " + Lf("lastGood", pretty(last), agoText(daysAgo(last))) }
             result = ResultInfo(kind: .failure, title: L("resultFail"), detail: detail, errors: errs)
             addHistory(.backupFail(lastGood: last), log: "ERROR: no new backup; last good: \(last ?? "unknown")")
-            notify("Force TM ❌", L("resultFail"), sound: "Basso")
+            notify("Backeddy ❌", L("resultFail"), sound: "Basso")
         }
         let stoppedByUser = userStopped
         before = nil; startDate = nil; lastSent = nil; userStopped = false; phaseKey = ""
@@ -369,7 +369,7 @@ final class Model: ObservableObject {
     }
 
     func checkForUpdate() async {
-        var req = URLRequest(url: URL(string: "https://api.github.com/repos/lordironballs/force-tm/releases/latest")!)
+        var req = URLRequest(url: URL(string: "https://api.github.com/repos/backeddy/mac/releases/latest")!)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         req.timeoutInterval = 15
         guard let res = try? await URLSession.shared.data(for: req),
@@ -486,7 +486,7 @@ final class Model: ObservableObject {
     func scanCaches() {
         cacheScanning = true
         Task {
-            caches = await Task.detached { Force_TM_scanCaches() }.value
+            caches = await Task.detached { Backeddy_scanCaches() }.value
             cacheSel = cacheSel.filter { id in caches.contains { $0.id == id } }
             cacheScanning = false
         }
@@ -521,7 +521,7 @@ final class Model: ObservableObject {
         if on && !awake {
             awake = IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleSystemSleep as CFString,
                                                 IOPMAssertionLevel(kIOPMAssertionLevelOn),
-                                                "Force TM: Time Machine backup in progress" as CFString,
+                                                "Backeddy: Time Machine backup in progress" as CFString,
                                                 &assertion) == kIOReturnSuccess
         } else if !on && awake {
             IOPMAssertionRelease(assertion); awake = false
@@ -530,4 +530,4 @@ final class Model: ObservableObject {
 }
 
 /// Apelido para chamar a função global de dentro do modelo (que tem um método com o mesmo nome)
-func Force_TM_scanCaches() -> [CacheItem] { scanCaches() }
+func Backeddy_scanCaches() -> [CacheItem] { scanCaches() }

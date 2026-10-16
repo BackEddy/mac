@@ -1,9 +1,9 @@
 #!/bin/bash
-# Compila o Force TM. Por padrão instala em ~/Applications e abre.
+# Compila o Backeddy. Por padrão instala em ~/Applications e abre.
 #   SKIP_INSTALL=1 ./build.sh   → só compila em build/ (usado pelo release.sh)
 set -e
 cd "$(dirname "$0")"
-NAME="Force TM"
+NAME="Backeddy"
 APP="build/$NAME.app"
 VERSION=$(cat VERSION 2>/dev/null || echo "0.0.0")
 BUILD_NUMBER=$(git rev-list --count HEAD 2>/dev/null || echo 1)
@@ -32,7 +32,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <plist version="1.0"><dict>
   <key>CFBundleName</key><string>$NAME</string>
   <key>CFBundleDisplayName</key><string>$NAME</string>
-  <key>CFBundleIdentifier</key><string>br.com.eddyantonini.forcetm</string>
+  <key>CFBundleIdentifier</key><string>br.com.backeddy.mac</string>
   <key>CFBundleExecutable</key><string>$NAME</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>

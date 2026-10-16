@@ -1,13 +1,13 @@
-<p align="center"><img src="docs/icon.png" width="128" alt="Icono de Force TM"></p>
+<p align="center"><img src="docs/icon.png" width="128" alt="Icono de Backeddy"></p>
 
-<h1 align="center">Force TM</h1>
+<h1 align="center">Backeddy for Mac</h1>
 
 <p align="center">
   <b>Un panel amigable para forzar, seguir y confirmar backups de Time Machine en macOS — y liberar espacio con seguridad.</b><br>
   <a href="README.md">English</a> · <a href="README.pt-BR.md">Português</a>
 </p>
 
-<p align="center"><img src="docs/screenshot.png" width="520" alt="Ventana principal de Force TM"></p>
+<p align="center"><img src="docs/screenshot.png" width="520" alt="Ventana principal de Backeddy"></p>
 
 ---
 
@@ -27,35 +27,35 @@ Toda acción que elimina archivos muestra un aviso y pide que escribas una palab
 
 ## Descarga
 
-Descarga el `.dmg` firmado y notarizado más reciente en **[Releases](https://github.com/lordironballs/force-tm/releases)**, ábrelo y arrastra **Force TM** a Aplicaciones.
+Descarga el `.dmg` firmado y notarizado más reciente en **[Releases](https://github.com/backeddy/mac/releases)**, ábrelo y arrastra **Backeddy** a Aplicaciones.
 
 Requiere **macOS 14 Sonoma o posterior**.
 
-Al abrirlo por primera vez, activa el **Acceso total al disco** para Force TM (Ajustes del Sistema › Privacidad y seguridad › Acceso total al disco) para que pueda leer la lista de backups y la carpeta de WhatsApp.
+Al abrirlo por primera vez, activa el **Acceso total al disco** para Backeddy (Ajustes del Sistema › Privacidad y seguridad › Acceso total al disco) para que pueda leer la lista de backups y la carpeta de WhatsApp.
 
 ## Compilar desde el código
 
 Necesitas Xcode o las Command Line Tools (`xcode-select --install`).
 
 ```bash
-git clone https://github.com/lordironballs/force-tm.git
-cd force-tm
+git clone https://github.com/backeddy/mac.git
+cd mac
 ./build.sh
 ```
 
-La app se compila, se instala en `~/Applications/Force TM.app` y se abre.
+La app se compila, se instala en `~/Applications/Backeddy.app` y se abre.
 
 ## ¿Por qué no está en la Mac App Store?
 
-Las apps de la App Store se ejecutan en sandbox, que bloquea lo que Force TM necesita: ejecutar `tmutil`, Acceso total al disco, acciones de administrador (eliminar snapshots, modo turbo) y limpiar carpetas de otras apps. Por eso se distribuye aquí, firmado y notarizado por Apple.
+Las apps de la App Store se ejecutan en sandbox, que bloquea lo que Backeddy necesita: ejecutar `tmutil`, Acceso total al disco, acciones de administrador (eliminar snapshots, modo turbo) y limpiar carpetas de otras apps. Por eso se distribuye aquí, firmado y notarizado por Apple.
 
 ## Seguridad
 
-Force TM usa solo herramientas de Apple (`tmutil`, `pmset`, `sysctl`). Nunca ve ni guarda tu contraseña — macOS la pide directamente. Eliminar snapshots locales, multimedia de WhatsApp o cachés no se puede deshacer: mantén tus backups al día. Se ofrece tal cual, sin garantías (ver [LICENSE](LICENSE)).
+Backeddy usa solo herramientas de Apple (`tmutil`, `pmset`, `sysctl`). Nunca ve ni guarda tu contraseña — macOS la pide directamente. Eliminar snapshots locales, multimedia de WhatsApp o cachés no se puede deshacer: mantén tus backups al día. Se ofrece tal cual, sin garantías (ver [LICENSE](LICENSE)).
 
 ## Apoya
 
-Force TM es gratuito. Si te ayudó, una donación de agradecimiento ayuda a mantener el proyecto ❤️
+Backeddy es gratuito. Si te ayudó, una donación de agradecimiento ayuda a mantener el proyecto ❤️
 
 - 🇧🇷 **PIX:** `pix@xwa.com.br` (o usa **Apoyar el proyecto** dentro de la app para ver el código QR)
 - 🌎 **[GitHub Sponsors](https://github.com/sponsors/lordironballs)**

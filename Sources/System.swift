@@ -1,4 +1,4 @@
-// Force TM — acesso ao sistema (Time Machine, energia, rede, WhatsApp, caches, histórico)
+// Backeddy — acesso ao sistema (Time Machine, energia, rede, WhatsApp, caches, histórico)
 import Foundation
 import AppKit
 
@@ -231,8 +231,8 @@ func collectDiagnostics(appVersion: String, backups: [String], noAccess: Bool) -
     }
     let snaps = listLocalSnapshots()
     let errs = recentErrors(since: Date().addingTimeInterval(-1800), timeout: 15)
-    var s = "## Force TM diagnostics\n\n"
-    s += "- Force TM: \(appVersion)\n"
+    var s = "## Backeddy diagnostics\n\n"
+    s += "- Backeddy: \(appVersion)\n"
     s += "- macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)\n"
     s += "- Model: \(model.trimmingCharacters(in: .whitespacesAndNewlines))\n"
     s += "- Destination backups: \(backups.count) (latest: \(backups.last ?? "unknown"))\(noAccess ? " — no Full Disk Access" : "")\n"
@@ -415,7 +415,7 @@ struct HistoryEntry: Codable, Identifiable {
 
 func historyURL() -> URL {
     let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("Force TM")
+        .appendingPathComponent("Backeddy")
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     return dir.appendingPathComponent("history.json")
 }
@@ -432,7 +432,7 @@ func saveHistory(_ h: [HistoryEntry]) {
 }
 
 func appendLog(_ line: String) {
-    let url = home.appendingPathComponent("Library/Logs/force-tm.log")
+    let url = home.appendingPathComponent("Library/Logs/backeddy.log")
     let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd HH:mm:ss"
     let data = Data("\(f.string(from: Date())) \(line)\n".utf8)
     if let h = try? FileHandle(forWritingTo: url) { h.seekToEndOfFile(); h.write(data); try? h.close() }

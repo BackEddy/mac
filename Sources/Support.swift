@@ -1,9 +1,9 @@
-// Force TM — janela "Apoie o projeto" (PIX + GitHub Sponsors)
+// Backeddy — janela "Apoie o projeto" (PIX + GitHub Sponsors)
 import SwiftUI
 import AppKit
 import CoreImage
 
-let repoURL = URL(string: "https://github.com/lordironballs/force-tm")!
+let repoURL = URL(string: "https://github.com/backeddy/mac")!
 let sponsorsURL = URL(string: "https://github.com/sponsors/lordironballs")!
 let pixKey = "pix@xwa.com.br"
 /// Código PIX "copia e cola" (BR Code estático). Gerado e conferido (CRC16-CCITT) para a chave acima.

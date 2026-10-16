@@ -10,10 +10,10 @@
 # Uso:  ./release.sh
 set -e
 cd "$(dirname "$0")"
-NAME="Force TM"
+NAME="Backeddy"
 VERSION=$(cat VERSION)
 APP="build/$NAME.app"
-DMG="dist/Force-TM-$VERSION.dmg"
+DMG="dist/Backeddy-$VERSION.dmg"
 PROFILE="${NOTARY_PROFILE:-force-tm-notary}"
 
 ID=$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/{print $2; exit}')
@@ -43,4 +43,4 @@ spctl -a -t open --context context:primary-signature -v "$DMG" && echo "Gatekeep
 shasum -a 256 "$DMG" | tee "$DMG.sha256"
 echo
 echo "✅ Pronto: $DMG"
-echo "Publique com:  gh release create v$VERSION \"$DMG\" --title \"Force TM $VERSION\" --generate-notes"
+echo "Publique com:  gh release create v$VERSION \"$DMG\" --title \"Backeddy $VERSION\" --generate-notes"

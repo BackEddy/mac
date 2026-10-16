@@ -1,4 +1,4 @@
-// Force TM — interface
+// Backeddy — interface
 import SwiftUI
 import AppKit
 
@@ -136,7 +136,7 @@ struct ContentView: View {
             appIcon(44)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("Force TM").font(.title2.weight(.semibold))
+                    Text("Backeddy").font(.title2.weight(.semibold))
                     Text("v\(appVersion)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 }
                 HStack(spacing: 6) {
@@ -644,7 +644,7 @@ struct MenuBarView: View {
             HStack(spacing: 10) {
                 appIcon(30)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Force TM").font(.headline)
+                    Text("Backeddy").font(.headline)
                     Text(m.menuStatusText).font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -688,7 +688,7 @@ struct HelpView: View {
                 HStack(spacing: 12) {
                     appIcon(48)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Force TM \(appVersion) — \(L("helpTitle"))").font(.title2.weight(.semibold))
+                        Text("Backeddy \(appVersion) — \(L("helpTitle"))").font(.title2.weight(.semibold))
                         HStack(spacing: 4) {
                             Text(L("createdBy"))
                             Link("eddyantonini.com.br", destination: URL(string: "https://eddyantonini.com.br")!)
