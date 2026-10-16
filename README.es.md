@@ -7,6 +7,8 @@
   <a href="README.md">English</a> · <a href="README.pt-BR.md">Português</a>
 </p>
 
+<p align="center"><img src="docs/screenshot.png" width="520" alt="Ventana principal de Force TM"></p>
+
 ---
 
 ## Qué hace

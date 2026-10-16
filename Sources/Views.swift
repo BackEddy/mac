@@ -169,6 +169,7 @@ struct ContentView: View {
             Spacer()
             Button { openWindow(id: "support") } label: { Label(L("supportBtn"), systemImage: "heart.fill") }
                 .buttonStyle(.borderless).foregroundStyle(Color.pink)
+                .padding(.trailing, 8)
             Picker(L("language"), selection: $m.lang) {
                 Text(L("langAuto")).tag("auto")
                 Text("Português").tag("pt")

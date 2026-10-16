@@ -7,6 +7,8 @@
   <a href="README.md">English</a> · <a href="README.es.md">Español</a>
 </p>
 
+<p align="center"><img src="docs/screenshot.png" width="520" alt="Janela principal do Force TM"></p>
+
 ---
 
 ## O que ele faz

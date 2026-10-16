@@ -7,6 +7,8 @@
   <a href="README.pt-BR.md">Português</a> · <a href="README.es.md">Español</a>
 </p>
 
+<p align="center"><img src="docs/screenshot.png" width="520" alt="Force TM main window"></p>
+
 ---
 
 ## What it does
