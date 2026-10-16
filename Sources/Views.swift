@@ -382,9 +382,16 @@ struct ContentView: View {
                     Label(L("powerIdle"), systemImage: "moon.zzz")
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
-                Toggle(L("sleepWhenDone"), isOn: $m.sleepWhenDone)
-                    .toggleStyle(.checkbox).font(.callout).padding(.top, 2)
-                    .help(L("sleepWhenDoneHelp"))
+                HStack(spacing: 8) {
+                    Text(L("afterBackupLabel")).font(.callout)
+                    Picker("", selection: $m.afterBackup) {
+                        Text(L("afterAllow")).tag("allow")
+                        Text(L("afterSleep")).tag("sleep")
+                    }
+                    .labelsHidden().fixedSize()
+                }
+                .padding(.top, 2)
+                .help(L("afterBackupHelp"))
             }
         }
     }

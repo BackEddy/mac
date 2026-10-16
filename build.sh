@@ -12,7 +12,7 @@ rm -rf build; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" docs
 
 echo "Gerando ícone..."
 mkdir -p build/AppIcon.iconset
-swift tools/icon.swift build/icon_1024.png
+cp assets/AppIcon.png build/icon_1024.png      # ícone (fonte editável em assets/AppIcon.svg)
 for s in 16 32 128 256 512; do
   sips -z $s $s build/icon_1024.png --out build/AppIcon.iconset/icon_${s}x${s}.png >/dev/null
   d=$((s*2)); sips -z $d $d build/icon_1024.png --out build/AppIcon.iconset/icon_${s}x${s}@2x.png >/dev/null

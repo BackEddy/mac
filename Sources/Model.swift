@@ -6,6 +6,11 @@ import ServiceManagement
 
 enum ResultKind { case success, failure, info }
 
+/// Fases do começo e do fim de um backup (para perceber backups em sequência)
+let earlyPhases: Set<String> = ["Starting", "FindingBackupVol", "MountingBackupVol", "MountingDiskImage",
+                                "PreparingSourceVolumes", "FindingChanges", "SizingChanges", "ThinningPreBackup"]
+let latePhases: Set<String> = ["Finishing", "ThinningPostBackup", "LazyThinning", "DeletingOldBackups"]
+
 struct AppUpdate: Equatable {
     let version: String
     let url: URL
@@ -45,8 +50,10 @@ final class Model: ObservableObject {
     @Published var destFree: Int64? = (UserDefaults.standard.object(forKey: "destFree") as? NSNumber)?.int64Value
     @Published var update: AppUpdate?
     @Published var sleepCountdown: Int?
-    @Published var sleepWhenDone: Bool = UserDefaults.standard.bool(forKey: "sleepWhenDone") {
-        didSet { guard sleepWhenDone != oldValue else { return }; UserDefaults.standard.set(sleepWhenDone, forKey: "sleepWhenDone") }
+    /// "allow" = só libera o Mac para dormir normalmente · "sleep" = põe o Mac para dormir ao terminar
+    @Published var afterBackup: String = UserDefaults.standard.string(forKey: "afterBackup")
+        ?? (UserDefaults.standard.bool(forKey: "sleepWhenDone") ? "sleep" : "allow") {
+        didSet { guard afterBackup != oldValue else { return }; UserDefaults.standard.set(afterBackup, forKey: "afterBackup") }
     }
 
     // Limpeza
@@ -153,6 +160,14 @@ final class Model: ObservableObject {
             set(\.speed, nil); lastBytes = nil; lastTime = nil
         }
 
+        if wasRunning && s.running && latePhases.contains(phaseKey) && earlyPhases.contains(s.phase) {
+            // Um backup terminou e o Time Machine já começou o próximo: conclui o anterior
+            keepAwake(false)
+            await finish()
+            startDate = Date().addingTimeInterval(-60)
+            keepAwake(true)
+        }
+
         if s.running && s.phase != phaseKey {
             phaseKey = s.phase
             phaseStart = Date()
@@ -167,7 +182,6 @@ final class Model: ObservableObject {
             if !wasRunning {
                 if startDate == nil { startDate = Date().addingTimeInterval(-60) }
                 keepAwake(true)
-                if result != nil { result = nil }
             }
             if (before?.isEmpty ?? true) && !readingBackups {
                 readingBackups = true
@@ -326,7 +340,7 @@ final class Model: ObservableObject {
         }
         let stoppedByUser = userStopped
         before = nil; startDate = nil; lastSent = nil; userStopped = false; phaseKey = ""
-        if sleepWhenDone && !stoppedByUser { startSleepCountdown() }
+        if afterBackup == "sleep" && !stoppedByUser { startSleepCountdown() }
     }
 
     // MARK: Rede, diagnóstico, atualização
@@ -377,7 +391,7 @@ final class Model: ObservableObject {
     // MARK: Dormir ao terminar
 
     private func startSleepCountdown() {
-        sleepCountdown = 30
+        sleepCountdown = 10
         Task {
             while let c = sleepCountdown, c > 0 {
                 try? await Task.sleep(for: .seconds(1))

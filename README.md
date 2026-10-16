@@ -16,7 +16,7 @@
 - **Back Up Now** — starts a Time Machine backup and keeps your Mac awake *only while it runs* (on power or battery). The display can still turn off, and there's a **Turn Off Display** button.
 - **Real progress** — same percentage as the Time Machine menu, plus data sent, data analyzed, speed, time remaining, Wi-Fi vs. cable, and a clear view of phases without progress (like “Thinning old backups”).
 - **Verified result** — compares the destination's backup list before and after: ✅ only when a new backup really exists, ❌ with the last good backup and Time Machine's errors otherwise.
-- **Optional sleep when done** — your Mac goes to sleep 30 s after the backup ends (cancelable).
+- **When the backup finishes** — either let your Mac sleep normally, or put it to sleep 10 s after the backup ends (cancelable).
 - **Local snapshots** — see how many there are and delete them to get your space back right away.
 - **Turbo mode** — temporarily lifts macOS's throttling of Time Machine; reverts by itself when the backup ends.
 - **Cleanup** — WhatsApp for Mac media (by age) and large caches (browsers, Gradle, Xcode, Homebrew, npm, pip, AI models…).

@@ -16,7 +16,7 @@
 - **Hacer backup ahora** — inicia un backup de Time Machine y mantiene el Mac despierto *solo mientras se ejecuta* (con corriente o con batería). La pantalla puede seguir apagándose y hay un botón **Apagar la pantalla**.
 - **Progreso real** — el mismo porcentaje del menú de Time Machine, más enviados, analizados, velocidad, tiempo restante, Wi-Fi o cable, y fases sin porcentaje (como “Limpiando backups antiguos”) mostradas con claridad.
 - **Resultado confirmado** — compara la lista de backups del destino antes y después: ✅ solo cuando realmente existe un backup nuevo; ❌ con el último backup bueno y los errores de Time Machine, si no.
-- **Dormir al terminar (opcional)** — el Mac se duerme 30 s después del final del backup (se puede cancelar).
+- **Al terminar el backup** — deja que el Mac se duerma normalmente o duérmelo 10 s después del final (se puede cancelar).
 - **Snapshots locales** — mira cuántos hay y elimínalos para recuperar el espacio al instante.
 - **Modo turbo** — quita temporalmente el límite de velocidad que macOS impone a Time Machine; vuelve a la normalidad solo al terminar el backup.
 - **Limpieza** — multimedia de WhatsApp para Mac (por antigüedad) y cachés grandes (navegadores, Gradle, Xcode, Homebrew, npm, pip, modelos de IA…).
