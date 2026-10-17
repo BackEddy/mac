@@ -39,7 +39,7 @@ enum ActiveSheet: String, Identifiable {
     var id: String { rawValue }
 }
 
-enum MainTab: String { case backup, cleanup, history }
+enum MainTab: String { case backup, cleanup, history, server }
 
 // MARK: - Janela principal
 
@@ -64,12 +64,14 @@ struct ContentView: View {
                 Text("Backup").tag(MainTab.backup)
                 Text(L("tabCleanup")).tag(MainTab.cleanup)
                 Text(L("history")).tag(MainTab.history)
+                Text(L("srvTab")).tag(MainTab.server)
             }
             .pickerStyle(.segmented).labelsHidden()
             switch tab {
             case .backup: backupTab
             case .cleanup: cleanupTab
             case .history: historyTab
+            case .server: ServerTabView()
             }
             footer
         }
@@ -632,8 +634,11 @@ struct ContentView: View {
 
 struct MenuBarLabel: View {
     @ObservedObject var m: Model
+    @ObservedObject private var srv = ServerModel.shared
     var body: some View {
-        if m.status.running {
+        if !srv.alerts.isEmpty && !m.status.running {
+            Image(systemName: "exclamationmark.octagon.fill")
+        } else if m.status.running {
             HStack(spacing: 3) {
                 Image(systemName: "bolt.circle.fill")
                 Text(String(format: "%.0f%%", (m.status.percent ?? 0) * 100))
@@ -646,6 +651,7 @@ struct MenuBarLabel: View {
 
 struct MenuBarView: View {
     @EnvironmentObject var m: Model
+    @ObservedObject private var srv = ServerModel.shared
     @Environment(\.openWindow) private var openWindow
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -666,6 +672,12 @@ struct MenuBarView: View {
                     Text(hms(m.status.timeRemaining))
                 }
                 .font(.caption).monospacedDigit().foregroundStyle(.secondary)
+            }
+            if !srv.alerts.isEmpty {
+                Divider()
+                Label(Lf("srvMenuAlert", srv.name), systemImage: "speaker.wave.3.fill").font(.callout.weight(.semibold)).foregroundStyle(Color.red)
+                ForEach(srv.alerts) { a in Text(a.text).font(.caption).fixedSize(horizontal: false, vertical: true) }
+                AckButtons().buttonStyle(.bordered).controlSize(.small)
             }
             Divider()
             if !m.status.running {

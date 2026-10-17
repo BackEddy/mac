@@ -89,7 +89,9 @@ final class TMSetupModel: ObservableObject {
             do {
                 let (_, resp) = try await URLSession.shared.data(for: req)
                 switch (resp as? HTTPURLResponse)?.statusCode ?? 0 {
-                case 200..<300: afterPassword()
+                case 200..<300:
+                    ServerModel.shared.remember(host: s.host, name: s.name, password: password)
+                    afterPassword()
                 case 401: passwordError = L("tmWrongPassword")
                 case 429: passwordError = L("tmTooMany")
                 case let c: passwordError = Lf("tmServerError", "\(c)")

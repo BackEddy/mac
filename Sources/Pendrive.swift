@@ -323,10 +323,10 @@ final class PendriveModel: ObservableObject {
                 if FileManager.default.fileExists(atPath: file.path), try await verify(file, img) {
                     imageFile = file; phase = .confirm; return
                 }
-                downloader = FileDownloader(url: img.url, to: file, progress: { [weak self] g, t in
-                    self?.got = g; if t > 0 { self?.total = t }
-                }, done: { [weak self] err in
-                    guard let self, self.phase == .download else { return }
+                downloader = FileDownloader(url: img.url, to: file, progress: { g, t in
+                    self.got = g; if t > 0 { self.total = t }
+                }, done: { err in
+                    guard self.phase == .download else { return }
                     self.downloader = nil
                     if let err { self.phase = .failed(err.localizedDescription); return }
                     Task {
@@ -359,7 +359,7 @@ final class PendriveModel: ObservableObject {
                     writing = nil; phase = .confirm; return    // cancelou a senha
                 }
                 try await Task.detached {
-                    try writeImage(file, to: fd) { v in DispatchQueue.main.async { [weak self] in self?.writing = v } }
+                    try writeImage(file, to: fd) { v in DispatchQueue.main.async { self.writing = v } }
                 }.value
                 _ = await Task.detached { sh("/usr/sbin/diskutil", ["eject", "/dev/\(disk.id)"], timeout: 60) }.value
                 writing = nil; typed = ""; doneDisk = disk; phase = .done
@@ -373,7 +373,7 @@ final class PendriveModel: ObservableObject {
         checking = 0
         defer { checking = nil }
         let sha = try await Task.detached {
-            try sha256File(file) { v in DispatchQueue.main.async { [weak self] in self?.checking = v } }
+            try sha256File(file) { v in DispatchQueue.main.async { self.checking = v } }
         }.value
         return sha == img.sha256
     }

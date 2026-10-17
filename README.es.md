@@ -21,6 +21,7 @@
 - **Modo turbo** — quita temporalmente el límite de velocidad que macOS impone a Time Machine; vuelve a la normalidad solo al terminar el backup.
 - **Limpieza** — multimedia de WhatsApp para Mac (por antigüedad) y cachés grandes (navegadores, Gradle, Xcode, Homebrew, npm, pip, modelos de IA…).
 - **Configurar Time Machine con Backeddy Server** — encuentra el servidor en la red, comprueba la contraseña y lo configura todo (destino, backup automático, primer backup) sin abrir los Ajustes del Sistema.
+- **Pestaña Servidor** — estado del Backeddy Server de casa; cuando pita por una alerta, el Mac y la barra de menús avisan, y puedes detener el pitido desde ahí (mañana, en 3 o 7 días).
 - **Crear el pendrive de Backeddy Server** — descarga la versión más reciente, la comprueba y la graba en un pendrive que convierte un PC viejo en servidor de backup.
 - **Icono en la barra de menús**, **aviso de backup atrasado**, **historial** y **ayuda** integrada.
 - En **español, portugués e inglés**.
