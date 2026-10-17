@@ -15,7 +15,19 @@
 
 ## Em poucas palavras
 
-O Mac já vem com um ótimo sistema de backup, o **Time Machine**. O problema é que ele trabalha escondido: você nunca sabe direito se o backup está rodando, se terminou ou se falhou. O **Backeddy** mostra tudo isso de um jeito claro, avisa quando algo dá errado e ainda te ajuda a montar um **servidor de backup** em casa — para todos os Macs (e PCs) fazerem backup sozinhos, sem HD pendurado no cabo.
+O Mac já vem com um ótimo sistema de backup, o **Time Machine**. O problema é que ele trabalha escondido: você nunca sabe direito se o backup está rodando, se terminou ou se falhou. O **Backeddy** mostra tudo isso de um jeito claro, avisa quando algo dá errado e ainda te ajuda a montar um **servidor de backup** em casa — para todos os Macs da casa (e, em breve, os PCs) fazerem backup sozinhos, sem HD pendurado no cabo.
+
+## Antes de começar: os riscos
+
+O Backeddy é novo e foi feito por uma pessoa, com muita ajuda de inteligência artificial. Ele funciona nos nossos testes, mas ainda é uma **versão de teste**. Sem drama, com honestidade, o que você precisa saber:
+
+- 🧹 **O PC que vira servidor é apagado por inteiro.** Use um computador sem nada importante. O instalador avisa duas vezes e pede para você digitar APAGAR, mas confira com calma qual PC e quais discos.
+- 📦 **Não deixe o Backeddy ser a única cópia das suas coisas, por enquanto.** Fotos que não podem sumir merecem também outra cópia (um HD guardado na gaveta, um serviço na nuvem).
+- 💽 **Um disco só não protege contra disco quebrado.** Com dois discos, cada arquivo fica nos dois. Com um, se ele morrer, o histórico de backups vai junto — os arquivos no seu Mac continuam lá, e o servidor recomeça.
+- 🪟 **O Windows vai reclamar do instalador** (“O Windows protegeu o computador”) porque ele ainda não tem assinatura digital. É esperado: clique em **Mais informações › Executar assim mesmo**.
+- 🍎 **Por enquanto, o servidor faz backup de Macs.** Ele já está pronto para receber PCs, mas o app **Backeddy for Windows** ainda está chegando.
+- 🐢 **O primeiro backup demora**: horas, se o Mac tiver muita coisa, e mais ainda pelo Wi-Fi. Depois, só vai o que mudou.
+- 🤝 **Sem garantia.** É gratuito e de código aberto, fornecido como está. Se algo der errado, [conta pra gente](https://github.com/BackEddy/server/issues): é assim que ele fica bom.
 
 ## Primeiro, alguns nomes
 
@@ -92,7 +104,7 @@ Toda ação que apaga alguma coisa mostra um aviso e pede que você digite uma p
 - **Meus arquivos vão para a internet?** Não. Tudo fica na sua casa: no HD ou no seu servidor. O app só acessa a internet para ver se há versão nova e para baixar o Backeddy Server.
 - **Preciso entender de Linux ou de servidor?** Não. O Backeddy Server é instalado por telas, com mouse, e depois se cuida sozinho (inclusive atualizações de segurança).
 - **E se o disco do servidor quebrar?** Com dois discos, nada se perde. Com um só, os arquivos continuam nos Macs e o servidor recomeça os backups. Em qualquer caso, o servidor avisa (bipa e aparece no app).
-- **Funciona com o Windows?** O Backeddy Server já recebe backups de PCs; o app **Backeddy for Windows** está chegando.
+- **Funciona com o Windows?** O servidor já está pronto para receber backups de PCs, mas o app **Backeddy for Windows**, que faz esse backup, ainda está chegando. Por enquanto, o servidor guarda os backups dos Macs.
 
 ## Compilar a partir do código
 

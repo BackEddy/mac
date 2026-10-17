@@ -15,7 +15,19 @@
 
 ## In a nutshell
 
-Your Mac comes with a great backup system, **Time Machine**. The catch is that it works out of sight: you never quite know whether a backup is running, finished or failed. **Backeddy** shows all of that clearly, tells you when something goes wrong, and helps you set up a **backup server** at home — so every Mac (and PC) backs up on its own, with no drive dangling from a cable.
+Your Mac comes with a great backup system, **Time Machine**. The catch is that it works out of sight: you never quite know whether a backup is running, finished or failed. **Backeddy** shows all of that clearly, tells you when something goes wrong, and helps you set up a **backup server** at home — so every Mac in the house (and soon every PC) backs up on its own, with no drive dangling from a cable.
+
+## Before you start: the risks
+
+Backeddy is new and was built by one person with a lot of help from AI. It works in our tests, but it's still an **early preview**. No drama, just honesty — here's what you should know:
+
+- 🧹 **The PC that becomes the server is completely erased.** Use a computer with nothing important on it. The installer warns you twice and asks you to type ERASE, but take your time and double-check which PC and which disks.
+- 📦 **Don't make Backeddy the only copy of your stuff, for now.** Photos you can't lose deserve another copy too (a drive in a drawer, a cloud service).
+- 💽 **One disk doesn't protect against a broken disk.** With two disks, every file lives on both. With one, if it dies, the backup history goes with it — the files on your Mac are still there, and the server starts over.
+- 🪟 **Windows will complain about the installer** (“Windows protected your PC”) because it isn't digitally signed yet. That's expected: click **More info › Run anyway**.
+- 🍎 **For now, the server backs up Macs.** It's ready to receive PCs, but the **Backeddy for Windows** app is still on its way.
+- 🐢 **The first backup takes a while**: hours if your Mac has a lot on it, longer over Wi-Fi. After that, only what changed is copied.
+- 🤝 **No warranty.** It's free and open source, provided as is. If something goes wrong, [tell us](https://github.com/BackEddy/server/issues): that's how it gets better.
 
 ## First, a few terms
 
@@ -92,7 +104,7 @@ Every action that deletes something shows a warning and asks you to type a confi
 - **Do my files go to the internet?** No. Everything stays at home: on your drive or your server. The app only goes online to check for updates and to download Backeddy Server.
 - **Do I need to know Linux or servers?** No. Backeddy Server installs through simple screens, with a mouse, and then takes care of itself (security updates included).
 - **What if a server disk breaks?** With two disks, nothing is lost. With one, your files are still on your Macs and the server starts backing up again. Either way, the server warns you (it beeps and shows up in the app).
-- **Does it work with Windows?** Backeddy Server already accepts PC backups; the **Backeddy for Windows** app is coming.
+- **Does it work with Windows?** The server is ready to receive PC backups, but the **Backeddy for Windows** app that makes them is still on its way. For now, the server keeps your Macs' backups.
 
 ## Build from source
 
