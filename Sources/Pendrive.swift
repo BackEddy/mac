@@ -273,9 +273,26 @@ let pendriveCache: URL = {
 
 let minPendrive: Int64 = 4_000_000_000
 
+/// Instalador da máquina virtual para Windows (sempre o da última versão do servidor)
+let windowsInstallerURL = URL(string: "https://github.com/BackEddy/server/releases/latest/download/Instalar-Backeddy.exe")!
+
+/// Quanto este Mac ocupa no disco
+func macUsedBytes() -> Int64 {
+    let keys: Set<URLResourceKey> = [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey]
+    guard let v = try? URL(fileURLWithPath: "/").resourceValues(forKeys: keys), let total = v.volumeTotalCapacity else { return 0 }
+    return max(0, Int64(total) - (v.volumeAvailableCapacityForImportantUsage ?? 0))
+}
+
+/// Espaço sugerido para os backups deste Mac: o dobro do que ele ocupa (cópia + histórico), em centenas de GB
+func suggestedBackupSize(_ used: Int64) -> Int64 {
+    let step: Int64 = 100_000_000_000
+    let double = max(used * 2, step)
+    return (double + step - 1) / step * step
+}
+
 @MainActor
 final class PendriveModel: ObservableObject {
-    enum Phase: Equatable { case choose, download, confirm, write, done, failed(String) }
+    enum Phase: Equatable { case start, windows, choose, download, confirm, write, done, failed(String) }
     @Published var phase: Phase = .choose
     @Published var disks: [ExternalDisk] = []
     @Published var selected: String?
@@ -295,7 +312,7 @@ final class PendriveModel: ObservableObject {
     var selectedDisk: ExternalDisk? { disks.first { $0.id == selected } }
 
     func start() {
-        phase = .choose   // a janela guarda o estado entre aberturas: sempre recomeça pela lista
+        phase = .start    // a janela guarda o estado entre aberturas: sempre recomeça pela escolha
         refresh()
         // pendrive colocado ou tirado com a janela aberta
         timer?.invalidate()
@@ -396,17 +413,21 @@ final class PendriveModel: ObservableObject {
 struct PendriveView: View {
     @StateObject private var p = PendriveModel()
     @Environment(\.dismissWindow) private var dismissWindow
+    @Environment(\.openWindow) private var openWindow
+    @State private var copied = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
-                Image(systemName: "mediastick").font(.system(size: 30)).foregroundStyle(Color.accentColor)
+                Image(systemName: "server.rack").font(.system(size: 30)).foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L("pdTitle")).font(.title3.weight(.semibold))
                     Text(L("pdSubtitle")).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
             }
             switch p.phase {
+            case .start: startStep
+            case .windows: windowsStep
             case .choose: chooseStep
             case .download: downloadStep
             case .failed(let msg): failedStep(msg)
@@ -419,6 +440,74 @@ struct PendriveView: View {
         .frame(width: 520)
         .onAppear { p.start() }
         .onDisappear { p.stop() }
+    }
+
+    // Onde o servidor vai rodar: PC dedicado (pendrive) ou máquina virtual num PC com Windows
+    var startStep: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L("pdWhere")).font(.headline)
+            wayCard(icon: "pc", title: L("pdWayPC"), desc: L("pdWayPCDesc")) { p.phase = .choose }
+            wayCard(icon: "macwindow.on.rectangle", title: L("pdWayVM"), desc: L("pdWayVMDesc")) { p.phase = .windows }
+            Text(L("pdWayHint")).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    func wayCard(icon: String, title: String, desc: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: icon).font(.system(size: 26)).frame(width: 36).foregroundStyle(Color.accentColor)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.callout.weight(.semibold))
+                    Text(desc).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundStyle(.secondary).padding(.top, 4)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 10).fill(Color(nsColor: .controlBackgroundColor)))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.1)))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // Máquina virtual: o instalador roda no PC com Windows; daqui só mandamos o link e sugerimos o tamanho
+    var windowsStep: some View {
+        let used = macUsedBytes()
+        let suggest = suggestedBackupSize(used)
+        return VStack(alignment: .leading, spacing: 10) {
+            Text(L("pdWinTitle")).font(.headline)
+            md(L("pdWinStep1")).font(.callout).fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 8) {
+                Text(windowsInstallerURL.absoluteString).font(.caption.monospaced()).textSelection(.enabled)
+                    .lineLimit(1).truncationMode(.middle)
+                Spacer(minLength: 0)
+            }
+            .padding(8)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .controlBackgroundColor)))
+            HStack(spacing: 8) {
+                Button { copyLink() } label: { Label(copied ? L("pdWinCopied") : L("pdWinCopy"), systemImage: copied ? "checkmark" : "doc.on.doc") }
+                ShareLink(item: windowsInstallerURL) { Label(L("pdWinSend"), systemImage: "square.and.arrow.up") }
+                Button { NSWorkspace.shared.open(windowsInstallerURL) } label: { Label(L("pdWinDownload"), systemImage: "arrow.down.circle") }
+            }
+            .controlSize(.small)
+            md(L("pdWinStep2")).font(.callout).fixedSize(horizontal: false, vertical: true)
+            md(Lf("pdWinStep3", humanSize(suggest), humanSize(used))).font(.callout).fixedSize(horizontal: false, vertical: true)
+            md(L("pdWinStep4")).font(.callout).fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Button(L("pdBack")) { p.phase = .start }.keyboardShortcut(.cancelAction)
+                Spacer()
+                Button(L("pdWinConfigure")) { openWindow(id: "tmsetup") }
+                Button(L("pdClose")) { dismissWindow(id: "pendrive") }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
+            }
+        }
+    }
+
+    func copyLink() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(windowsInstallerURL.absoluteString, forType: .string)
+        copied = true
     }
 
     var chooseStep: some View {
@@ -439,9 +528,10 @@ struct PendriveView: View {
                 Label(L("pdBigWarn"), systemImage: "exclamationmark.triangle.fill")
                     .font(.callout).foregroundStyle(Color.orange).fixedSize(horizontal: false, vertical: true)
             }
+            Text(L("pdHint")).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             HStack {
-                Text(L("pdHint")).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 Spacer()
+                Button(L("pdBack")) { p.phase = .start }.keyboardShortcut(.cancelAction)
                 Button(L("pdContinue")) { p.startDownload() }
                     .buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
                     .disabled(p.selectedDisk == nil)
@@ -556,11 +646,41 @@ struct PendriveView: View {
 // MARK: - Textos
 
 let SPendrive: [String: [String: String]] = [
-    "pdMenu": ["pt": "Criar pendrive do Backeddy Server…", "en": "Create Backeddy Server USB Drive…", "es": "Crear pendrive de Backeddy Server…"],
-    "pdTitle": ["pt": "Criar o pendrive do Backeddy Server", "en": "Create the Backeddy Server USB drive", "es": "Crear el pendrive de Backeddy Server"],
-    "pdSubtitle": ["pt": "Transforma um PC velho num servidor de backup para os Macs e PCs da casa.",
-                   "en": "Turns an old PC into a backup server for the Macs and PCs at home.",
-                   "es": "Convierte un PC viejo en un servidor de backup para los Mac y PC de casa."],
+    "pdMenu": ["pt": "Montar o Backeddy Server…", "en": "Set Up a Backeddy Server…", "es": "Montar el Backeddy Server…"],
+    "pdTitle": ["pt": "Montar o Backeddy Server", "en": "Set up a Backeddy Server", "es": "Montar el Backeddy Server"],
+    "pdSubtitle": ["pt": "Um servidor de backup para os Macs e PCs da casa, num computador que fica ligado.",
+                   "en": "A backup server for the Macs and PCs at home, on a computer that stays on.",
+                   "es": "Un servidor de backup para los Mac y PC de casa, en un ordenador que queda encendido."],
+    "pdWhere": ["pt": "Onde o servidor vai rodar?", "en": "Where will the server run?", "es": "¿Dónde va a funcionar el servidor?"],
+    "pdWayPC": ["pt": "Num computador só para os backups", "en": "On a computer just for backups", "es": "En un ordenador solo para los backups"],
+    "pdWayPCDesc": ["pt": "Um PC ou notebook que ninguém mais usa vira o servidor. Tudo nele é apagado. É o jeito mais simples e o mais rápido, e você só precisa de um pendrive.",
+                    "en": "A PC or laptop nobody uses anymore becomes the server. Everything on it is erased. It's the simplest and fastest way, and all you need is a USB drive.",
+                    "es": "Un PC o portátil que ya nadie usa se convierte en el servidor. Todo lo que tiene se borra. Es la forma más simple y rápida, y solo necesitas un pendrive."],
+    "pdWayVM": ["pt": "Num PC com Windows que já fica ligado", "en": "On a Windows PC that's always on", "es": "En un PC con Windows que ya queda encendido"],
+    "pdWayVMDesc": ["pt": "O Windows e os arquivos continuam como estão: o servidor roda numa máquina virtual dentro dele. Precisa de espaço livre para os backups, de preferência num disco separado (conte o dobro do que os Macs e PCs ocupam), e esse PC tem que ficar ligado.",
+                    "en": "Windows and its files stay as they are: the server runs in a virtual machine inside it. It needs free space for the backups, ideally on a separate disk (plan for twice what the Macs and PCs use), and the PC has to stay on.",
+                    "es": "Windows y sus archivos quedan como están: el servidor funciona en una máquina virtual dentro de él. Necesita espacio libre para los backups, mejor en un disco aparte (calcula el doble de lo que ocupan los Mac y PC), y ese PC tiene que quedar encendido."],
+    "pdWayHint": ["pt": "Não sabe? Se tem um PC parado, escolha o primeiro: é mais rápido e não depende do Windows.",
+                  "en": "Not sure? If you have a spare PC, pick the first: it's faster and doesn't depend on Windows.",
+                  "es": "¿No sabes? Si tienes un PC parado, elige el primero: es más rápido y no depende de Windows."],
+    "pdWinTitle": ["pt": "Instale no PC com Windows", "en": "Install on the Windows PC", "es": "Instala en el PC con Windows"],
+    "pdWinStep1": ["pt": "**1.** No PC com Windows, baixe o instalador por este link. Dica: mande o link para você mesmo (e-mail, WhatsApp) e abra lá.",
+                   "en": "**1.** On the Windows PC, download the installer from this link. Tip: send the link to yourself (email, messages) and open it there.",
+                   "es": "**1.** En el PC con Windows, descarga el instalador con este enlace. Consejo: envíate el enlace (correo, WhatsApp) y ábrelo allí."],
+    "pdWinCopy": ["pt": "Copiar o link", "en": "Copy Link", "es": "Copiar el enlace"],
+    "pdWinCopied": ["pt": "Copiado", "en": "Copied", "es": "Copiado"],
+    "pdWinSend": ["pt": "Enviar o link…", "en": "Send Link…", "es": "Enviar el enlace…"],
+    "pdWinDownload": ["pt": "Baixar aqui no Mac", "en": "Download on This Mac", "es": "Descargar en este Mac"],
+    "pdWinStep2": ["pt": "**2.** Abra o arquivo baixado. Se o Windows avisar “O Windows protegeu o computador”, clique em **Mais informações › Executar assim mesmo**.",
+                   "en": "**2.** Open the downloaded file. If Windows says “Windows protected your PC”, click **More info › Run anyway**.",
+                   "es": "**2.** Abre el archivo descargado. Si Windows avisa “Windows protegió su PC”, haz clic en **Más información › Ejecutar de todas formas**."],
+    "pdWinStep3": ["pt": "**3.** Escolha o disco e o tamanho dos backups: reserve pelo menos **%@** para este Mac (ele usa %@ hoje; o resto é para o histórico). Some o que os outros Macs e PCs precisarem.",
+                   "en": "**3.** Choose the disk and the backup size: set aside at least **%@** for this Mac (it uses %@ today; the rest is for history). Add what the other Macs and PCs need.",
+                   "es": "**3.** Elige el disco y el tamaño de los backups: reserva al menos **%@** para este Mac (hoy usa %@; el resto es para el historial). Suma lo que necesiten los otros Mac y PC."],
+    "pdWinStep4": ["pt": "**4.** A instalação abre numa janela, igual à do pendrive. No fim, clique em **Ejetar pendrive** no instalador do Windows. Depois, volte aqui e use **Configurar este Mac** para ele fazer backup no servidor.",
+                   "en": "**4.** The setup opens in a window, just like the USB one. At the end, click **Ejetar pendrive** (eject) in the Windows installer. Then come back here and use **Set Up This Mac** so it backs up to the server.",
+                   "es": "**4.** La instalación se abre en una ventana, igual que la del pendrive. Al final, haz clic en **Ejetar pendrive** (expulsar) en el instalador de Windows. Después, vuelve aquí y usa **Configurar este Mac** para que haga backup en el servidor."],
+    "pdWinConfigure": ["pt": "Configurar este Mac…", "en": "Set Up This Mac…", "es": "Configurar este Mac…"],
     "pdChoose": ["pt": "Escolha o pendrive", "en": "Choose the USB drive", "es": "Elige el pendrive"],
     "pdNoDisk": ["pt": "Coloque um pendrive de pelo menos 4 GB neste Mac.", "en": "Plug a USB drive of at least 4 GB into this Mac.",
                  "es": "Conecta un pendrive de al menos 4 GB a este Mac."],

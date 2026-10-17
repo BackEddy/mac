@@ -148,7 +148,7 @@ struct ContentView: View {
                 }
             }
             Spacer()
-            Button { openWindow(id: "pendrive") } label: { Image(systemName: "mediastick").font(.title3) }
+            Button { openWindow(id: "pendrive") } label: { Image(systemName: "server.rack").font(.title3) }
                 .buttonStyle(.borderless).help(L("pdMenu"))
             Button { openWindow(id: "help") } label: { Image(systemName: "questionmark.circle").font(.title3) }
                 .buttonStyle(.borderless).help(L("helpMenu"))

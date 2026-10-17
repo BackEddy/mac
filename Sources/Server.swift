@@ -234,7 +234,7 @@ let SServer: [String: [String: String]] = [
                          "en": "Connect your home backup server to see its status here and stop the beeping when there's an alert.",
                          "es": "Conecta el servidor de backup de casa para ver su estado aquí y detener el pitido cuando haya una alerta."],
     "srvConnect": ["pt": "Conectar ao Backeddy Server…", "en": "Connect to Backeddy Server…", "es": "Conectar a Backeddy Server…"],
-    "srvNoServer": ["pt": "Ainda não tenho: criar o pendrive…", "en": "Don't have one yet: create the USB drive…", "es": "Aún no tengo: crear el pendrive…"],
+    "srvNoServer": ["pt": "Ainda não tenho: montar um servidor…", "en": "Don't have one yet: set one up…", "es": "Aún no tengo: montar un servidor…"],
     "srvBeeping": ["pt": "O servidor está bipando", "en": "The server is beeping", "es": "El servidor está pitando"],
     "srvAckHint": ["pt": "Reconhecer para o bipe. Se o problema continuar, o servidor lembra de novo:",
                    "en": "Acknowledging stops the beeping. If the problem persists, the server reminds you again:",
