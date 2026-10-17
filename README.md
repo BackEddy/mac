@@ -53,9 +53,9 @@ Tips: a **network cable** is much faster than Wi-Fi (without a cable, the instal
 
 Windows and its files stay untouched; the server runs in a virtual machine. The PC has to stay on.
 
-1. On the Windows PC, download **[Instalar-Backeddy.exe](https://github.com/BackEddy/server/releases/latest/download/Instalar-Backeddy.exe)** and open it. If Windows says “Windows protected your PC”, click **More info › Run anyway**.
+1. On the Windows PC, download **[Instalar-Backeddy.exe](https://github.com/BackEddy/server/releases/latest/download/Instalar-Backeddy.exe)** and open it. Windows will say “Windows protected your PC”: click **More info › Run anyway**. *(Why? The installer isn't digitally signed yet — we're working on it. It's open source and built automatically by GitHub from that code.)*
 2. Choose the disk and the backup size. The installer sets everything up by itself (Hyper-V, or VirtualBox on Windows Home).
-3. The setup opens in a window, just like the USB one. At the end, click **Ejetar pendrive** (eject) and you're done. *(The Windows installer is in Portuguese for now.)*
+3. The setup opens in a window, just like the USB one. At the end, click **Eject USB drive** and you're done.
 
 ### How much space?
 
@@ -76,6 +76,8 @@ On your Mac, open **Backup destination › Set up with Backeddy Server…**: the
 - **Cleanup** — old WhatsApp media and big caches (browsers, Xcode, Homebrew, npm, AI models…).
 - **Set up a Backeddy Server**, **set up Time Machine** on it and follow everything in the **Server** tab (see above).
 - **Menu bar icon**, **overdue backup reminder**, **history** and **help**, in **English, Portuguese and Spanish**.
+
+Backeddy Server (setup, server screen, alerts and panel) speaks **English, Portuguese and Spanish**: you pick the language on the first setup screen.
 
 Every action that deletes something shows a warning and asks you to type a confirmation word.
 

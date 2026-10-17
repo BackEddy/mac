@@ -53,9 +53,9 @@ Consejos: el **cable de red** es mucho más rápido que el Wi-Fi (sin cable, el 
 
 Windows y sus archivos quedan intactos; el servidor funciona en una máquina virtual. El PC tiene que quedar encendido.
 
-1. En el PC con Windows, descarga **[Instalar-Backeddy.exe](https://github.com/BackEddy/server/releases/latest/download/Instalar-Backeddy.exe)** y ábrelo. Si Windows avisa “Windows protegió su PC”, haz clic en **Más información › Ejecutar de todas formas**.
+1. En el PC con Windows, descarga **[Instalar-Backeddy.exe](https://github.com/BackEddy/server/releases/latest/download/Instalar-Backeddy.exe)** y ábrelo. Windows avisará “Windows protegió su PC”: haz clic en **Más información › Ejecutar de todas formas**. *(¿Por qué? El instalador todavía no tiene firma digital — estamos en ello. Es de código abierto y GitHub lo genera automáticamente a partir de ese código.)*
 2. Elige el disco y el tamaño de los backups. El instalador lo prepara todo solo (Hyper-V, o VirtualBox en Windows Home).
-3. La instalación se abre en una ventana, igual que la del pendrive. Al final, haz clic en **Ejetar pendrive** (expulsar) y listo. *(Por ahora, el instalador de Windows está en portugués.)*
+3. La instalación se abre en una ventana, igual que la del pendrive. Al final, haz clic en **Expulsar pendrive** y listo.
 
 ### ¿Cuánto espacio?
 
@@ -76,6 +76,8 @@ En el Mac, abre **Destino de backup › Configurar con Backeddy Server…**: la 
 - **Limpieza** — multimedia antigua de WhatsApp y cachés grandes (navegadores, Xcode, Homebrew, npm, modelos de IA…).
 - **Montar el Backeddy Server**, **configurar Time Machine** en él y seguirlo todo en la pestaña **Servidor** (ver arriba).
 - **Icono en la barra de menús**, **aviso de backup atrasado**, **historial** y **ayuda**, en **español, portugués e inglés**.
+
+Backeddy Server (instalación, pantalla del servidor, alertas y panel) habla **español, portugués e inglés**: el idioma se elige en la primera pantalla de la instalación.
 
 Toda acción que borra algo muestra un aviso y te pide que escribas una palabra de confirmación.
 

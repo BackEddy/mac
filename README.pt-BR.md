@@ -53,7 +53,7 @@ Dicas: **cabo de rede** é bem mais rápido que Wi-Fi (sem cabo, o instalador of
 
 O Windows e os arquivos continuam intactos; o servidor roda numa máquina virtual. O PC precisa ficar ligado.
 
-1. No PC com Windows, baixe **[Instalar-Backeddy.exe](https://github.com/BackEddy/server/releases/latest/download/Instalar-Backeddy.exe)** e abra. Se o Windows avisar “O Windows protegeu o computador”, clique em **Mais informações › Executar assim mesmo**.
+1. No PC com Windows, baixe **[Instalar-Backeddy.exe](https://github.com/BackEddy/server/releases/latest/download/Instalar-Backeddy.exe)** e abra. O Windows vai avisar “O Windows protegeu o computador”: clique em **Mais informações › Executar assim mesmo**. *(Por quê? O instalador ainda não tem assinatura digital — estamos providenciando. O código é aberto e o arquivo é montado automaticamente pelo GitHub a partir dele.)*
 2. Escolha o disco e o tamanho dos backups. O instalador prepara tudo sozinho (Hyper-V, ou VirtualBox no Windows Home).
 3. A instalação abre numa janela, igual à do pendrive. No fim, clique em **Ejetar pendrive** e pronto.
 
@@ -76,6 +76,8 @@ No Mac, abra a aba **Destino de backup › Configurar com o Backeddy Server…**
 - **Limpeza** — mídia antiga do WhatsApp e caches grandes (navegadores, Xcode, Homebrew, npm, modelos de IA…).
 - **Montar o Backeddy Server**, **configurar o Time Machine** nele e acompanhar tudo na aba **Servidor** (veja acima).
 - **Ícone na barra de menus**, **aviso de backup atrasado**, **histórico** e **ajuda**, em **português, inglês e espanhol**.
+
+O Backeddy Server (instalação, tela do servidor, alertas e painel) fala **português, inglês e espanhol**: o idioma é escolhido na primeira tela da instalação.
 
 Toda ação que apaga alguma coisa mostra um aviso e pede que você digite uma palavra de confirmação.
 
