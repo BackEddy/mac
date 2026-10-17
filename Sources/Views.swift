@@ -146,6 +146,8 @@ struct ContentView: View {
                 }
             }
             Spacer()
+            Button { openWindow(id: "pendrive") } label: { Image(systemName: "mediastick").font(.title3) }
+                .buttonStyle(.borderless).help(L("pdMenu"))
             Button { openWindow(id: "help") } label: { Image(systemName: "questionmark.circle").font(.title3) }
                 .buttonStyle(.borderless).help(L("helpMenu"))
             if m.status.running {
@@ -341,6 +343,12 @@ struct ContentView: View {
                     if m.status.running && !m.backupsError.isEmpty {
                         Text(m.backupsError).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
                     }
+                }
+                // sem destino configurado: botão em destaque; com destino: link discreto
+                if m.loaded && m.destKind.isEmpty {
+                    Button(L("tmButton")) { openWindow(id: "tmsetup") }.buttonStyle(.borderedProminent).padding(.top, 4)
+                } else {
+                    Button(L("tmButton")) { openWindow(id: "tmsetup") }.buttonStyle(.link).font(.caption).padding(.top, 2)
                 }
             }
         }

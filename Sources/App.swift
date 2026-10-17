@@ -51,6 +51,10 @@ struct AppCommands: Commands {
         CommandGroup(replacing: .appInfo) {
             Button(L("about")) { showAbout() }
         }
+        CommandGroup(after: .newItem) {
+            Button(L("tmMenu")) { openWindow(id: "tmsetup") }
+            Button(L("pdMenu")) { openWindow(id: "pendrive") }
+        }
         CommandGroup(replacing: .help) {
             Button(L("helpMenu")) { openWindow(id: "help") }.keyboardShortcut("?", modifiers: .command)
             Button(L("copyDiag")) { model.copyDiagnostics() }
@@ -83,6 +87,16 @@ struct BackeddyApp: App {
 
         Window(L("supportTitle"), id: "support") {
             SupportView().environmentObject(model)
+        }
+        .windowResizability(.contentSize)
+
+        Window(L("tmTitle"), id: "tmsetup") {
+            TMSetupView()
+        }
+        .windowResizability(.contentSize)
+
+        Window(L("pdTitle"), id: "pendrive") {
+            PendriveView()
         }
         .windowResizability(.contentSize)
 

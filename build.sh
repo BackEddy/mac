@@ -44,6 +44,9 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
+  <key>NSLocalNetworkUsageDescription</key><string>Backeddy procura o Backeddy Server na sua rede para configurar o Time Machine.</string>
+  <key>NSBonjourServices</key><array><string>_backeddy._tcp</string></array>
+  <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
 </dict></plist>
 PLIST
 

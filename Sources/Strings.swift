@@ -15,7 +15,7 @@ var currentLang = resolveLang()
 func appLocale() -> Locale {
     Locale(identifier: currentLang == "pt" ? "pt_BR" : currentLang == "es" ? "es_ES" : "en_US")
 }
-func L(_ k: String) -> String { S[k]?[currentLang] ?? S[k]?["en"] ?? k }
+func L(_ k: String) -> String { let d = S[k] ?? SPendrive[k] ?? STMSetup[k]; return d?[currentLang] ?? d?["en"] ?? k }
 func Lf(_ k: String, _ args: CVarArg...) -> String { String(format: L(k), locale: appLocale(), arguments: args) }
 
 let S: [String: [String: String]] = [

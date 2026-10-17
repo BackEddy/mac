@@ -20,6 +20,8 @@
 - **Local snapshots** — see how many there are and delete them to get your space back right away.
 - **Turbo mode** — temporarily lifts macOS's throttling of Time Machine; reverts by itself when the backup ends.
 - **Cleanup** — WhatsApp for Mac media (by age) and large caches (browsers, Gradle, Xcode, Homebrew, npm, pip, AI models…).
+- **Set up Time Machine with Backeddy Server** — finds the server on your network, checks the password and sets everything up (destination, automatic backups, first backup) without opening System Settings.
+- **Create the Backeddy Server USB drive** — downloads the latest version, verifies it and writes it to a USB drive that turns an old PC into a backup server.
 - **Menu bar icon**, **overdue backup notifications**, **history**, built-in **help**.
 - Available in **English, Portuguese and Spanish**.
 
