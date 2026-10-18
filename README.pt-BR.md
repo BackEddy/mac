@@ -63,7 +63,7 @@ Dicas: **cabo de rede** é bem mais rápido que Wi-Fi (sem cabo, o instalador of
 
 ### Jeito 2 — numa máquina virtual, num PC com Windows
 
-O Windows e os arquivos continuam intactos; o servidor roda numa máquina virtual. O PC precisa ficar ligado.
+O Windows e os arquivos continuam intactos; o servidor roda numa máquina virtual. O PC precisa ficar ligado. *Os arquivos desse próprio PC não ficam protegidos pelo servidor que roda dentro dele: use um HD externo para eles.*
 
 1. No PC com Windows, baixe **[Instalar-Backeddy.exe](https://github.com/BackEddy/server/releases/latest/download/Instalar-Backeddy.exe)** e abra. O Windows vai avisar “O Windows protegeu o computador”: clique em **Mais informações › Executar assim mesmo**. *(Por quê? O instalador ainda não tem assinatura digital — estamos providenciando. O código é aberto e o arquivo é montado automaticamente pelo GitHub a partir dele.)*
 2. Escolha o disco e o tamanho dos backups. O instalador prepara tudo sozinho (Hyper-V, ou VirtualBox no Windows Home).
@@ -104,7 +104,7 @@ Toda ação que apaga alguma coisa mostra um aviso e pede que você digite uma p
 - **Meus arquivos vão para a internet?** Não. Tudo fica na sua casa: no HD ou no seu servidor. O app só acessa a internet para ver se há versão nova e para baixar o Backeddy Server.
 - **Preciso entender de Linux ou de servidor?** Não. O Backeddy Server é instalado por telas, com mouse, e depois se cuida sozinho (inclusive atualizações de segurança).
 - **E se o disco do servidor quebrar?** Com dois discos, nada se perde. Com um só, os arquivos continuam nos Macs e o servidor recomeça os backups. Em qualquer caso, o servidor avisa (bipa e aparece no app).
-- **Funciona com o Windows?** O servidor já está pronto para receber backups de PCs, mas o app **Backeddy for Windows**, que faz esse backup, ainda está chegando. Por enquanto, o servidor guarda os backups dos Macs.
+- **Funciona com o Windows?** Sim: o **[Backeddy for Windows](https://github.com/BackEddy/windows/blob/main/README.pt-BR.md)** faz backup dos PCs no mesmo Backeddy Server (ou num HD externo).
 
 ## Compilar a partir do código
 

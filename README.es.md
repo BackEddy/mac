@@ -63,7 +63,7 @@ Consejos: el **cable de red** es mucho más rápido que el Wi-Fi (sin cable, el 
 
 ### Forma 2 — en una máquina virtual, en un PC con Windows
 
-Windows y sus archivos quedan intactos; el servidor funciona en una máquina virtual. El PC tiene que quedar encendido.
+Windows y sus archivos quedan intactos; el servidor funciona en una máquina virtual. El PC tiene que quedar encendido. *Los archivos de ese mismo PC no quedan protegidos por el servidor que funciona dentro de él: usa un disco externo para ellos.*
 
 1. En el PC con Windows, descarga **[Instalar-Backeddy.exe](https://github.com/BackEddy/server/releases/latest/download/Instalar-Backeddy.exe)** y ábrelo. Windows avisará “Windows protegió su PC”: haz clic en **Más información › Ejecutar de todas formas**. *(¿Por qué? El instalador todavía no tiene firma digital — estamos en ello. Es de código abierto y GitHub lo genera automáticamente a partir de ese código.)*
 2. Elige el disco y el tamaño de los backups. El instalador lo prepara todo solo (Hyper-V, o VirtualBox en Windows Home).
@@ -104,7 +104,7 @@ Toda acción que borra algo muestra un aviso y te pide que escribas una palabra 
 - **¿Mis archivos van a internet?** No. Todo queda en tu casa: en el disco o en tu servidor. La app solo usa internet para buscar versiones nuevas y descargar Backeddy Server.
 - **¿Tengo que saber de Linux o de servidores?** No. Backeddy Server se instala con pantallas sencillas, con ratón, y después se cuida solo (actualizaciones de seguridad incluidas).
 - **¿Y si se rompe un disco del servidor?** Con dos discos, no se pierde nada. Con uno, los archivos siguen en los Mac y el servidor vuelve a empezar los backups. En cualquier caso, el servidor avisa (pita y aparece en la app).
-- **¿Funciona con Windows?** El servidor ya está listo para recibir backups de PC, pero la app **Backeddy for Windows**, que los hace, todavía está en camino. Por ahora, el servidor guarda los backups de los Mac.
+- **¿Funciona con Windows?** Sí: **[Backeddy for Windows](https://github.com/BackEddy/windows/blob/main/README.es.md)** hace backup de los PC en el mismo Backeddy Server (o en un disco externo).
 
 ## Compilar desde el código
 

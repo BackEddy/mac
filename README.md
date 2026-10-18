@@ -63,7 +63,7 @@ Tips: a **network cable** is much faster than Wi-Fi (without a cable, the instal
 
 ### Way 2 — in a virtual machine, on a Windows PC
 
-Windows and its files stay untouched; the server runs in a virtual machine. The PC has to stay on.
+Windows and its files stay untouched; the server runs in a virtual machine. The PC has to stay on. *That PC's own files are not protected by the server running inside it: use an external drive for them.*
 
 1. On the Windows PC, download **[Instalar-Backeddy.exe](https://github.com/BackEddy/server/releases/latest/download/Instalar-Backeddy.exe)** and open it. Windows will say “Windows protected your PC”: click **More info › Run anyway**. *(Why? The installer isn't digitally signed yet — we're working on it. It's open source and built automatically by GitHub from that code.)*
 2. Choose the disk and the backup size. The installer sets everything up by itself (Hyper-V, or VirtualBox on Windows Home).
@@ -104,7 +104,7 @@ Every action that deletes something shows a warning and asks you to type a confi
 - **Do my files go to the internet?** No. Everything stays at home: on your drive or your server. The app only goes online to check for updates and to download Backeddy Server.
 - **Do I need to know Linux or servers?** No. Backeddy Server installs through simple screens, with a mouse, and then takes care of itself (security updates included).
 - **What if a server disk breaks?** With two disks, nothing is lost. With one, your files are still on your Macs and the server starts backing up again. Either way, the server warns you (it beeps and shows up in the app).
-- **Does it work with Windows?** The server is ready to receive PC backups, but the **Backeddy for Windows** app that makes them is still on its way. For now, the server keeps your Macs' backups.
+- **Does it work with Windows?** Yes: **[Backeddy for Windows](https://github.com/BackEddy/windows#readme)** backs up PCs to the same Backeddy Server (or to an external drive).
 
 ## Build from source
 
