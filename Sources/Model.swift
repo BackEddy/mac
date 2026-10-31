@@ -67,6 +67,10 @@ final class Model: ObservableObject {
     @Published var cacheSel: Set<String> = []
     @Published var cacheScanning = false
     @Published var cacheWorking = false
+    @Published var trash = TrashInfo()
+    @Published var trashScanning = false
+    @Published var trashWorking = false
+    private var lastOKDate: Date?
     private var cleanupScanned = false
 
     // Histórico e ajustes
@@ -322,12 +326,17 @@ final class Model: ObservableObject {
             var detail = Lf("resultOKDetail", pretty(latest), gb(lastSent), after.count)
             if let duration { detail += " · " + Lf("resultDuration", durationText(duration)) }
             result = ResultInfo(kind: .success, title: L("resultOK"), detail: detail)
+            lastOKDate = Date()
             addHistory(.backupOK(stamp: latest, sent: lastSent, count: after.count, duration: duration),
                        log: "OK: backup \(latest), \(gb(lastSent)) sent, \(after.count) backups at destination")
             notify("Backeddy ✅", Lf("notifOK", pretty(latest)), sound: "Glass")
         } else if userStopped {
             result = ResultInfo(kind: .info, title: L("stoppedTitle"), detail: L("stoppedDetail"))
             addHistory(.stopped, log: "STOPPED: backup stopped by user")
+        } else if let ok = lastOKDate, Date().timeIntervalSince(ok) < 600 {
+            // Segunda conclusão logo depois de um backup bem-sucedido (o Time Machine reiniciou e parou
+            // em seguida): não é falha, então não mostra erro nem notifica.
+            appendLog("SKIP: no new backup, but last OK was \(Int(Date().timeIntervalSince(ok)))s ago; not reported as failure")
         } else {
             let since = startDate ?? Date().addingTimeInterval(-3600)
             let errs = await Task.detached { recentErrors(since: since) }.value
@@ -439,7 +448,7 @@ final class Model: ObservableObject {
     func cleanupTabOpened() {
         guard !cleanupScanned else { return }
         cleanupScanned = true
-        scanWA(); scanCaches()
+        scanWA(); scanCaches(); scanTrash()
     }
 
     var lowBatteryBeforeStart: Bool { !source.onAC && (source.batteryPercent ?? 100) < 50 }
@@ -506,6 +515,28 @@ final class Model: ObservableObject {
         }
     }
 
+    // MARK: Lixeira
+
+    func scanTrash() {
+        trashScanning = true
+        Task {
+            trash = await Task.detached { Backeddy_scanTrash() }.value
+            trashScanning = false
+        }
+    }
+
+    func cleanTrash() {
+        trashWorking = true
+        Task {
+            let r = await Task.detached { emptyTrash() }.value
+            addHistory(.trash(files: r.count, bytes: r.bytes), log: "TRASH: \(r.count) items (\(gb(r.bytes))) deleted")
+            result = ResultInfo(kind: .success, title: L("trashTitle"), detail: Lf("trashDone", r.count, gb(r.bytes)))
+            trashWorking = false
+            scanTrash()
+            free = freeBytes()
+        }
+    }
+
     // MARK: Ajustes
 
     func setLaunchAtLogin(_ on: Bool) {
@@ -531,3 +562,4 @@ final class Model: ObservableObject {
 
 /// Apelido para chamar a função global de dentro do modelo (que tem um método com o mesmo nome)
 func Backeddy_scanCaches() -> [CacheItem] { scanCaches() }
+func Backeddy_scanTrash() -> TrashInfo { scanTrash() }

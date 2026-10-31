@@ -382,6 +382,39 @@ func scanCaches() -> [CacheItem] {
     return items.sorted { $0.bytes > $1.bytes }
 }
 
+// MARK: - Lixeira
+
+struct TrashInfo: Sendable {
+    var bytes: Int64 = 0
+    var count = 0
+    var denied = false      // sem Acesso Total ao Disco: o sistema nega a leitura da lixeira
+}
+
+let trashURL = home.appendingPathComponent(".Trash")
+
+func scanTrash() -> TrashInfo {
+    var info = TrashInfo()
+    guard FileManager.default.fileExists(atPath: trashURL.path) else { return info }
+    guard let items = try? FileManager.default.contentsOfDirectory(at: trashURL, includingPropertiesForKeys: nil) else {
+        info.denied = true
+        return info
+    }
+    info.count = items.count
+    info.bytes = dirSize(trashURL)
+    return info
+}
+
+func emptyTrash() -> (count: Int, bytes: Int64) {
+    guard let items = try? FileManager.default.contentsOfDirectory(at: trashURL, includingPropertiesForKeys: nil) else { return (0, 0) }
+    var count = 0
+    var freed: Int64 = 0
+    for u in items {
+        let size = dirSize(u)
+        if (try? FileManager.default.removeItem(at: u)) != nil { count += 1; freed += size }
+    }
+    return (count, freed)
+}
+
 func deleteCaches(_ items: [CacheItem]) -> Int64 {
     var freed: Int64 = 0
     for item in items {
@@ -405,6 +438,7 @@ enum HistoryKind: Codable {
     case snapshots(count: Int)
     case whatsapp(files: Int, bytes: Int64)
     case cache(bytes: Int64)
+    case trash(files: Int, bytes: Int64)
 }
 
 struct HistoryEntry: Codable, Identifiable {

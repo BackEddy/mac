@@ -35,7 +35,7 @@ func md(_ s: String) -> Text { Text(LocalizedStringKey(s)) }
 }
 
 enum ActiveSheet: String, Identifiable {
-    case consent, snapshots, whatsapp, caches, stop, battery
+    case consent, snapshots, whatsapp, caches, trash, stop, battery
     var id: String { rawValue }
 }
 
@@ -95,6 +95,7 @@ struct ContentView: View {
                 case .snapshots: snapshotsSheet
                 case .whatsapp: whatsappSheet
                 case .caches: cachesSheet
+                case .trash: trashSheet
                 case .stop: stopSheet
                 case .battery: batterySheet
                 }
@@ -441,7 +442,7 @@ struct ContentView: View {
     // MARK: Aba Limpeza
 
     var cleanupTab: some View {
-        VStack(spacing: 14) { waCard; cacheCard }
+        VStack(spacing: 14) { waCard; cacheCard; trashCard }
     }
 
     var waCard: some View {
@@ -513,6 +514,32 @@ struct ContentView: View {
         }
     }
 
+    var trashCard: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Label(L("trashTitle"), systemImage: "trash").font(.headline)
+                    Spacer()
+                    Button { m.scanTrash() } label: { Image(systemName: "arrow.clockwise") }
+                        .buttonStyle(.borderless).help(L("refresh")).disabled(m.trashScanning || m.trashWorking)
+                }
+                if m.trashScanning || m.trashWorking {
+                    HStack(spacing: 8) { ProgressView().controlSize(.small); Text(L("scanning")).font(.callout).foregroundStyle(.secondary) }
+                } else if m.trash.denied {
+                    Text(L("trashDenied")).font(.callout).foregroundStyle(.secondary)
+                } else if m.trash.count == 0 {
+                    Text(L("trashEmpty")).font(.callout).foregroundStyle(.secondary)
+                } else {
+                    HStack {
+                        Text(Lf("trashUsing", gb(m.trash.bytes), m.trash.count)).font(.callout)
+                        Spacer()
+                        Button(L("trashBtn")) { confirmText = ""; sheet = .trash }
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: Aba Histórico
 
     var historyTab: some View {
@@ -557,6 +584,8 @@ struct ContentView: View {
             return ("photo.on.rectangle.angled", .orange, Lf("hWhatsApp", files, gb(bytes)))
         case .cache(let bytes):
             return ("archivebox.fill", .orange, Lf("hCache", gb(bytes)))
+        case .trash(let files, let bytes):
+            return ("trash.fill", .orange, Lf("hTrash", files, gb(bytes)))
         }
     }
 
@@ -615,6 +644,15 @@ struct ContentView: View {
             Text(Lf("waConfirmMsg", m.wa.selCount, gb(m.wa.selBytes))).font(.callout).fixedSize(horizontal: false, vertical: true)
             redNote(L("waWarnPhone"))
             confirmBlock { m.cleanWA() }
+        }
+        .padding(20).frame(width: 440)
+    }
+
+    var trashSheet: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            warningTitle("trashConfirmTitle")
+            Text(Lf("trashConfirmMsg", m.trash.count, gb(m.trash.bytes))).font(.callout).fixedSize(horizontal: false, vertical: true)
+            confirmBlock { m.cleanTrash() }
         }
         .padding(20).frame(width: 440)
     }
